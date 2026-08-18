@@ -1,0 +1,49 @@
+
+
+12:00 
+
+ On 360 Report folder, Create an pptx file with exactly same format as the 360 dummy file but with following changes
+
+the information to be updated should be taken from xlsx file on that same directory as follows:
+
+
+1. Replace on pptx file customer name for the one on xlsx file, tab "Customer Info", also update month and year information on pptx as current one.
+
+2. On pptx "Customer Card Overview", take information from "Customer Info." tab at xlsx file, do the same for "Systems in Scope", take the information details from "Systems Info" tab on xlsx file
+
+3. For "Basis Checks" on pptx, take the information from "Basis Checks" at xlsx file
+
+4. For "DB Checks" sections on powerpoint file, take and screen shot for the "Evironment Section" on "DB Cheks" tab at xlsx and paste it on pptx file.
+
+5. For "SM Checks" at pptx fill it with an screenshot of "SM Checks" tab on xlsx file. If screenshot is too big paste it, add necessary  slides at pptx, make it fit nicely
+
+
+6. For "Recommendation - Basis" at pptx, take an screenshot for basis recommendation table on "Recommendations" tab at xlsx file
+
+7. For "Recommendation - Database" at pptx, take an screenshot for Database recommendation table on "Recommendations" tab at xlsx file
+
+For "Recommendation - SM" at pptx, take an screenshot for SM recommendation table on "Recommendations" tab at xlsx file
+
+12:20
+
+
+
+
+Do Following corrections:
+
+ 1. on Systems in Scope at PPT file, 
+                  Fill  "MAIN APPL HOST FQDN" with "Main Appl Host FQDN" value from xlsx file on "System Info Tab"
+
+ 2. On Basis Checks section at pptx, "Details" column cells should match the same values from xlsx file, tab "BASIS Checks"
+ 
+ 3. On DB Checks section at pptx, instead of pasting an screeshot, Read section "Environment Summary" at "DB Checks" Tab and paste KPIs and Values also information from "HANA Database Version", keep same fonts colors and style from pptx
+ 
+ 4. "Server Management Checks" slide is duplicated on pptx, keep only one.
+ 
+ 
+ 5. "Recommendation Database" slide is duplicated on pptx, keep only one.
+ 
+ 
+ 6. Remove Link on "Attachments slide"
+ 
+					

@@ -1,0 +1,31 @@
+# Excluded sensitive / generated content
+HANA Health Check Reports/
+Results/
+PLA_General_*.txt
+HANA_latest_release.txt
+
+# HANA tool generated output
+HANA Tool AI/hana_tool/output/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Playwright temp files
+.playwright-mcp/
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Large binaries — exceed GitHub 100 MB file limit
+Demos/
+*.mp4
+*.exe
+
+# Office files (large)
+*.pptx
+*.xlsx
+*.docx

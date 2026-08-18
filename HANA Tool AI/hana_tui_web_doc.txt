@@ -1,0 +1,203 @@
+"### Sinopsis
+
+Estoy desarrollando un conjunto de herramientas ágiles para el diagnóstico, prevención y análisis de fallas relacionadas con la disponibilidad y el desempeño de bases de datos SAP HANA. El objetivo principal es reducir significativamente el tiempo y esfuerzo que tradicionalmente implica identificar, ejecutar e interpretar consultas de diagnóstico mediante herramientas como HANA Studio o DBA Cockpit.
+
+Aprovechando las capacidades de Claude Code, estas herramientas están siendo diseñadas a la medida para generar reportes claros, confiables y fáciles de interpretar, basados en información veraz y oportuna. Dichos reportes permiten identificar KPIs críticos que impactan el desempeño operativo, anticipar posibles fallas y facilitar la toma de decisiones preventivas.
+
+La base técnica de estos análisis proviene de los minichecks oficiales de SAP, una colección de sentencias SQL que consultan vistas y tablas clave de SAP HANA para obtener información relevante sobre el estado de la base de datos. A partir de estos insumos, las herramientas automatizan la recopilación, procesamiento y presentación de resultados, eliminando tareas manuales repetitivas y reduciendo el margen de error.
+
+Además, para los análisis post mortem y procesos de RCA, la solución permite revisar de forma automatizada múltiples traces, logs y full system info dumps, actividades que anteriormente requerían una revisión manual extensa y compleja. Con ello, se busca acercar al equipo técnico a una experiencia en la que el origen de una falla raíz pueda identificarse de forma más rápida, estructurada y prácticamente a un clic de distancia.
+
+En conjunto, este trabajo contribuye a mejorar la capacidad de respuesta ante incidentes, fortalecer la prevención de fallas y optimizar el monitoreo del desempeño en entornos SAP HANA críticos."
+
+
+
+
+
+- now create a new version with this additional features
+
+	1. once the query is executed, with a button "AI Analysis", execute an AI analysis of the data from query result 
+
+set HTTPS_PROXY=http://proxy.rot.hec.sap.biz:8080
+
+http://proxy.rot.hec.sap.biz
+8080
+
+
+API Key:
+
+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
+
+
+
+
+Now restart the server and click 🔍 Diagnose in the AI panel footer. Here's what each result means and what to do:
+
+  ┌───────────────────────────┬──────────────────────────────────┬──────────────────────────────────────────────────┐
+  │          Result           │             Meaning              │                       Fix                        │
+  ├───────────────────────────┼──────────────────────────────────┼──────────────────────────────────────────────────┤
+  │ TCP ✗ Connection refused  │ Firewall blocks                  │ Ask network team to whitelist                    │
+  │ / timed out               │ api.anthropic.com:443            │ api.anthropic.com:443 outbound                   │
+  ├───────────────────────────┼──────────────────────────────────┼──────────────────────────────────────────────────┤
+  │ TCP ✓, but still fails    │ Proxy intercepts HTTPS (SSL      │ Set HTTPS_PROXY=http://proxy:port before         │
+  │                           │ inspection)                      │ starting the server                              │
+  ├───────────────────────────┼──────────────────────────────────┼──────────────────────────────────────────────────┤
+  │ API key NOT SET           │ ANTHROPIC_API_KEY missing        │ setx ANTHROPIC_API_KEY sk-ant-... then restart   │
+  ├───────────────────────────┼──────────────────────────────────┼──────────────────────────────────────────────────┤
+  │ Proxy detected            │ Windows proxy auto-detected      │ Client will use it automatically — retry         │
+  └───────────────────────────┴──────────────────────────────────┴──────────────────────────────────────────────────┘
+
+  If a proxy is needed, set it before starting hana_tui_web.py:
+  set HTTPS_PROXY=http://your-proxy-host:port
+  py hana_tui_web.py
+  The client will pick it up automatically on the next request (the client resets itself after each connection error).
+
+✻ Baked for 1m 38s
+
+────────────────────────────────────────────────────
+
+============================================
+ AI Analysis Setup (optional)
+============================================
+
+ The web console includes an "AI Analysis" feature that sends query
+ results to Claude (claude-opus-4-8) for interpretation.
+
+ To enable it you need an Anthropic API key from:
+   https://console.anthropic.com/
+
+Enter your Anthropic API key (or press Enter to skip): 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
+[INFO] API key saved as user environment variable ANTHROPIC_API_KEY.
+[INFO] It will be available in new terminal/cmd windows automatically.
+
+============================================
+ Setup complete.
+
+ Start the TUI console with:
+   py hana_tui.py
+
+ Start the Web console with:
+   py hana_tui_web.py
+   then open http://127.0.0.1:5000
+============================================
+
+Press any key to continue . . .
+
+
+
+
+
+You need an Anthropic API key to use the AI Analysis feature. You have two options:
+
+  Option A — You already have an API key
+  Enter it now. It will be saved as a Windows user environment variable (ANTHROPIC_API_KEY) so you never need to enter
+  it again.
+
+  Option B — Press Enter to skip
+  The tool works fully without it — connect to HANA, run SQL, view results, use Mini Checks. The ✨ AI Analysis button
+  simply won't function until the key is set.
+
+  ---
+  To get a key later:
+  1. Go to https://console.anthropic.com/
+  2. Sign in / create an account
+  3. Go to API Keys → Create Key
+  4. Then set it manually before starting the web console:
+  setx ANTHROPIC_API_KEY sk-ant-...
+  4. (or add it to System Properties → Environment Variables)
+
+  If this is a corporate/SAP environment where outbound HTTPS to api.anthropic.com may be blocked by the firewall, test
+  connectivity first before buying credits — the AI Analysis feature makes live calls to Anthropic's API from your
+  machine.
+
+✻ Worked for 8s
+
+
+
+
+- Create a new version for: @"C:\Users\I522148\OneDrive - SAP SE\SWAT\AI\HANA Tool AI\hana_tool\hana_tui_web.py"
+
+with following features:
+
+	1. once logged into db, list all sql files on directory \mini_checks   and let user pick with radio button, which one to be executed
+	
+	
+
+
+
+
+HTML ahora funciona, se pegan SQLs, se ejecutan y el resultado es exportable a csv
+
+
+	Modificaciones pendientes:
+		
+		Pantalla de inicio:
+		
+			- Quitar harcode de Host
+			- Database
+			- Puerto
+		
+			
+		
+			- Agreagar un boton que desconecte la sesión de la BD
+
+
+	
+
+"now create a version 2.0 for this code and add option to generate a graph from query results, make graph saveble as
+  png file with a button"
+
+
+
+Created at C:\Users\I522148\hana_tool\hana_tui_web2.py.
+
+  Run it:
+  python hana_tool\hana_tui_web2.py
+
+  What's new in v2.0:
+
+  ┌─────────────┬───────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │   Feature   │                                              Detail                                               │
+  ├─────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Chart tab   │ Click the Chart tab next to Table after running any query                                         │
+  ├─────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Chart types │ Bar, Line, Pie, Doughnut, Polar Area, Radar                                                       │
+  ├─────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Axis        │ Label column and Value column dropdowns — auto-detect the last numeric column as default value    │
+  │ pickers     │ axis                                                                                              │
+  ├─────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Color       │ Single base color for bar/line; pie/doughnut auto-cycle a 10-color palette                        │
+  │ picker      │                                                                                                   │
+  ├─────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Chart title │ Editable text field, defaults to "VALUE_COL by LABEL_COL"                                         │
+  ├─────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Save PNG    │ Downloads the chart as a .png with dark background, named after the title                         │
+  ├─────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Live        │ Chart rebuilds instantly when you change type, axes, color, or title                              │
+  │ rebuild     │                                                                                                   │
+  └─────────────┴───────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+paso pendiente, reemplazar hana_tui.py del remote host con la nueva version de lap local
+
+
+
+paso pendiente, copiar la nueva version de hana-
+
+
+
+
+c:\Users\I522148
+
+
+
+1. Copy the entire hana_tool\ folder over (replacing the old one)
+  2. Run install_hana_tui.bat — installs into lib\ inside the same folder, no admin rights needed
+  3. Run the app:
+  python hana_tui.py
+
+  No system permissions needed, no PATH issues — everything is self-contained in the folder.
+  
+  
+  
+  

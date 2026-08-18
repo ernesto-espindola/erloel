@@ -1,0 +1,297 @@
+================================================================================
+  HANA HEALTH CHECK - SYSTEMDB QUERIES
+  Source: HanaHealthCheck.sh v1.033
+  Connection Key: STDMUSER  (SYSTEMDB connection)
+  Note: Includes queries from both "SYSTEMDB-Only" and "Both DB" sections.
+================================================================================
+
+
+--------------------------------------------------------------------------------
+-- Q01 | fct_check_hdbuserstore_connection
+-- PURPOSE : HDBuilderstore connection validation
+-- RUNS ON : Both (SYSTEMDB and each Tenant)
+--------------------------------------------------------------------------------
+SELECT * FROM DUMMY;
+
+
+--------------------------------------------------------------------------------
+-- Q02 | fct_get_tenants
+-- PURPOSE : Discover all active tenant databases in the MDC system
+-- RUNS ON : SYSTEMDB only
+--------------------------------------------------------------------------------
+SELECT DATABASE_NAME
+FROM M_DATABASES
+WHERE DESCRIPTION NOT LIKE '%SystemDB%'
+  AND ACTIVE_STATUS = 'YES';
+
+
+--------------------------------------------------------------------------------
+-- Q03 | fct_check_alerts
+-- PURPOSE : Count P1 alerts in last 40 days (excl. alert IDs 17,22,23,24)
+-- RUNS ON : Both (SYSTEMDB first, then each Tenant)
+--------------------------------------------------------------------------------
+SELECT COUNT(1) AS TOTAL_ALERTS_P1
+FROM _SYS_STATISTICS.STATISTICS_ALERTS
+WHERE SECONDS_BETWEEN(ALERT_TIMESTAMP, CURRENT_TIMESTAMP) <= 3456000
+  AND ALERT_RATING = '1'
+  AND ALERT_ID NOT IN ('17', '22', '23', '24');
+
+
+--------------------------------------------------------------------------------
+-- Q04 | fct_check_alerts
+-- PURPOSE : P1 alert detail - top 100 grouped by alert ID and details
+-- RUNS ON : Both (SYSTEMDB first, then each Tenant)
+-- CONDITION: Runs only when Q03 returns > 0
+--------------------------------------------------------------------------------
+SELECT TOP 100 *
+FROM (
+  SELECT
+    COUNT(1)     AS NUM_OF_EVENTS,
+    ALERT_RATING,
+    ALERT_ID,
+    INDEX,
+    ALERT_DETAILS
+  FROM _SYS_STATISTICS.STATISTICS_ALERTS
+  WHERE SECONDS_BETWEEN(ALERT_TIMESTAMP, CURRENT_TIMESTAMP) <= 3456000
+    AND ALERT_RATING = '1'
+    AND ALERT_ID NOT IN ('17', '22', '23', '24')
+  GROUP BY ALERT_RATING, ALERT_ID, INDEX, ALERT_DETAILS
+  ORDER BY 1 DESC
+);
+
+
+--------------------------------------------------------------------------------
+-- Q05 | fct_check_backups
+-- PURPOSE : Count failed (non-log) backup executions
+-- RUNS ON : SYSTEMDB only
+-- NOTE    : SYS_DATABASES.M_BACKUP_CATALOG is a cross-DB view, SYSTEMDB only
+--------------------------------------------------------------------------------
+SELECT COUNT(1)
+FROM (
+  SELECT COUNT(1)
+  FROM SYS_DATABASES.M_BACKUP_CATALOG A
+  WHERE A.ENTRY_TYPE_NAME NOT LIKE '%log%'
+    AND A.STATE_NAME NOT IN ('successful', 'running')
+  GROUP BY A.ENTRY_TYPE_NAME, A.STATE_NAME
+);
+
+
+--------------------------------------------------------------------------------
+-- Q06 | fct_check_backups
+-- PURPOSE : Failed backup detail - database, type, start/end time, state
+-- RUNS ON : SYSTEMDB only
+-- CONDITION: Runs only when Q05 returns > 0
+--------------------------------------------------------------------------------
+SELECT
+  A.DATABASE_NAME,
+  A.ENTRY_TYPE_NAME,
+  TO_CHAR(A.SYS_START_TIME, 'dd/mm/yyyy hh24:mi:ss') AS START_DATE,
+  TO_CHAR(A.SYS_END_TIME,   'dd/mm/yyyy hh24:mi:ss') AS END_DATE,
+  A.STATE_NAME
+FROM SYS_DATABASES.M_BACKUP_CATALOG A
+WHERE A.ENTRY_TYPE_NAME NOT LIKE '%log%'
+  AND A.STATE_NAME NOT IN ('successful', 'running');
+
+
+--------------------------------------------------------------------------------
+-- Q07 | fct_check_backups
+-- PURPOSE : Count of backups running below average throughput (GB/min)
+-- RUNS ON : SYSTEMDB only
+--------------------------------------------------------------------------------
+SELECT COUNT(1) FROM (
+  SELECT TOP 10
+    A.ENTRY_TYPE_NAME,
+    TO_CHAR(A.SYS_START_TIME, 'dd/mm/yyyy hh24:mi:ss') AS START_DATE,
+    TO_CHAR(A.SYS_END_TIME,   'dd/mm/yyyy hh24:mi:ss') AS END_DATE,
+    SECONDS_BETWEEN(A.SYS_START_TIME, A.SYS_END_TIME) / 60 AS DURATION_MINS,
+    (SELECT AVG(SECONDS_BETWEEN(SYS_START_TIME, SYS_END_TIME) / 60)
+     FROM SYS_DATABASES.M_BACKUP_CATALOG
+     WHERE ENTRY_TYPE_NAME NOT LIKE '%log%') AS AVG_DURATION_MINS,
+    A.STATE_NAME,
+    B.BACKUP_SIZE / 1024 / 1024 AS BACKUP_GB,
+    (B.BACKUP_SIZE / 1024 / 1024) / (SECONDS_BETWEEN(A.SYS_START_TIME, A.SYS_END_TIME) / 60) AS GB_PER_MIN,
+    (SELECT AVG((B.BACKUP_SIZE / 1024 / 1024) / SECONDS_BETWEEN(A.SYS_START_TIME, A.SYS_END_TIME) / 60)
+     FROM SYS_DATABASES.M_BACKUP_CATALOG A
+     JOIN (SELECT BACKUP_ID, SUM(BACKUP_SIZE) / 1024 AS BACKUP_SIZE
+           FROM SYS_DATABASES.M_BACKUP_CATALOG_FILES
+           WHERE SOURCE_TYPE_NAME = 'volume'
+           GROUP BY BACKUP_ID) B ON A.BACKUP_ID = B.BACKUP_ID
+     WHERE A.ENTRY_TYPE_NAME NOT LIKE '%log%'
+       AND SECONDS_BETWEEN(A.SYS_START_TIME, A.SYS_END_TIME) > '0') AS AVG_GB_PER_MIN
+  FROM SYS_DATABASES.M_BACKUP_CATALOG A
+  JOIN (SELECT BACKUP_ID, SUM(BACKUP_SIZE) / 1024 AS BACKUP_SIZE
+        FROM SYS_DATABASES.M_BACKUP_CATALOG_FILES
+        WHERE SOURCE_TYPE_NAME = 'volume'
+        GROUP BY BACKUP_ID) B ON A.BACKUP_ID = B.BACKUP_ID
+  WHERE A.ENTRY_TYPE_NAME NOT LIKE '%log%'
+    AND SECONDS_BETWEEN(A.SYS_START_TIME, A.SYS_END_TIME) != '0'
+    AND (B.BACKUP_SIZE / 1024 / 1024) / (SECONDS_BETWEEN(A.SYS_START_TIME, A.SYS_END_TIME) / 60) <
+        (SELECT AVG((B.BACKUP_SIZE / 1024 / 1024) / SECONDS_BETWEEN(A.SYS_START_TIME, A.SYS_END_TIME) / 60)
+         FROM SYS_DATABASES.M_BACKUP_CATALOG A
+         JOIN (SELECT BACKUP_ID, SUM(BACKUP_SIZE) / 1024 AS BACKUP_SIZE
+               FROM SYS_DATABASES.M_BACKUP_CATALOG_FILES
+               WHERE SOURCE_TYPE_NAME = 'volume'
+               GROUP BY BACKUP_ID) B ON A.BACKUP_ID = B.BACKUP_ID
+         WHERE A.ENTRY_TYPE_NAME NOT LIKE '%log%'
+           AND SECONDS_BETWEEN(A.SYS_START_TIME, A.SYS_END_TIME) > '0')
+  ORDER BY 7 ASC
+);
+
+
+--------------------------------------------------------------------------------
+-- Q08 | fct_check_backups
+-- PURPOSE : Slow backup detail - top 10 by lowest GB/min throughput
+-- RUNS ON : SYSTEMDB only
+-- CONDITION: Runs only when Q07 returns > 0
+--------------------------------------------------------------------------------
+SELECT TOP 10
+  A.DATABASE_NAME,
+  A.ENTRY_TYPE_NAME,
+  TO_CHAR(A.SYS_START_TIME, 'dd/mm/yyyy hh24:mi:ss') AS START_DATE,
+  TO_CHAR(A.SYS_END_TIME,   'dd/mm/yyyy hh24:mi:ss') AS END_DATE,
+  SECONDS_BETWEEN(A.SYS_START_TIME, A.SYS_END_TIME) / 60 AS DURATION_MINS,
+  (SELECT AVG(SECONDS_BETWEEN(SYS_START_TIME, SYS_END_TIME) / 60)
+   FROM SYS_DATABASES.M_BACKUP_CATALOG
+   WHERE ENTRY_TYPE_NAME NOT LIKE '%log%') AS AVG_DURATION_MINS,
+  A.STATE_NAME,
+  B.BACKUP_SIZE / 1024 / 1024 AS BACKUP_GB,
+  (B.BACKUP_SIZE / 1024 / 1024) / (SECONDS_BETWEEN(A.SYS_START_TIME, A.SYS_END_TIME) / 60) AS GB_PER_MIN,
+  (SELECT AVG((B.BACKUP_SIZE / 1024 / 1024) / SECONDS_BETWEEN(A.SYS_START_TIME, A.SYS_END_TIME) / 60)
+   FROM SYS_DATABASES.M_BACKUP_CATALOG A
+   JOIN (SELECT BACKUP_ID, SUM(BACKUP_SIZE) / 1024 AS BACKUP_SIZE
+         FROM SYS_DATABASES.M_BACKUP_CATALOG_FILES
+         WHERE SOURCE_TYPE_NAME = 'volume'
+         GROUP BY BACKUP_ID) B ON A.BACKUP_ID = B.BACKUP_ID
+   WHERE A.ENTRY_TYPE_NAME NOT LIKE '%log%'
+     AND SECONDS_BETWEEN(A.SYS_START_TIME, A.SYS_END_TIME) > '0') AS AVG_GB_PER_MIN
+FROM SYS_DATABASES.M_BACKUP_CATALOG A
+JOIN (SELECT BACKUP_ID, SUM(BACKUP_SIZE) / 1024 AS BACKUP_SIZE
+      FROM SYS_DATABASES.M_BACKUP_CATALOG_FILES
+      WHERE SOURCE_TYPE_NAME = 'volume'
+      GROUP BY BACKUP_ID) B ON A.BACKUP_ID = B.BACKUP_ID
+WHERE A.ENTRY_TYPE_NAME NOT LIKE '%log%'
+  AND SECONDS_BETWEEN(A.SYS_START_TIME, A.SYS_END_TIME) > '0'
+  AND (B.BACKUP_SIZE / 1024 / 1024) / (SECONDS_BETWEEN(A.SYS_START_TIME, A.SYS_END_TIME) / 60) <
+      (SELECT AVG((B.BACKUP_SIZE / 1024 / 1024) / SECONDS_BETWEEN(A.SYS_START_TIME, A.SYS_END_TIME) / 60)
+       FROM SYS_DATABASES.M_BACKUP_CATALOG A
+       JOIN (SELECT BACKUP_ID, SUM(BACKUP_SIZE) / 1024 AS BACKUP_SIZE
+             FROM SYS_DATABASES.M_BACKUP_CATALOG_FILES
+             WHERE SOURCE_TYPE_NAME = 'volume'
+             GROUP BY BACKUP_ID) B ON A.BACKUP_ID = B.BACKUP_ID
+       WHERE A.ENTRY_TYPE_NAME NOT LIKE '%log%'
+         AND SECONDS_BETWEEN(A.SYS_START_TIME, A.SYS_END_TIME) > '0')
+ORDER BY BACKUP_GB ASC;
+
+
+--------------------------------------------------------------------------------
+-- Q09 | fct_check_bigtables
+-- PURPOSE : Count column store tables with more than 1.5 billion records
+-- RUNS ON : Both (SYSTEMDB first, then each Tenant)
+--------------------------------------------------------------------------------
+SELECT COUNT(1) AS BIG_TABLES
+FROM M_CS_TABLES
+WHERE RECORD_COUNT > '1500000000';
+
+
+--------------------------------------------------------------------------------
+-- Q10 | fct_check_bigtables
+-- PURPOSE : Big tables detail - schema, table, partition, record count
+-- RUNS ON : Both (SYSTEMDB first, then each Tenant)
+-- CONDITION: Runs only when Q09 returns > 0
+--------------------------------------------------------------------------------
+SELECT A.SCHEMA_NAME, A.TABLE_NAME, A.PART_ID, A.RECORD_COUNT
+FROM M_CS_TABLES A
+WHERE A.RECORD_COUNT > '1500000000'
+ORDER BY 4 DESC;
+
+
+--------------------------------------------------------------------------------
+-- Q11 | fct_check_memory
+-- PURPOSE : Count nameserver memory allocators consuming > 30% of total memory
+-- RUNS ON : SYSTEMDB only
+--------------------------------------------------------------------------------
+SELECT COUNT(1) FROM (
+  SELECT TOP 10
+    M_SERVICES.HOST,
+    M_SERVICES.SERVICE_NAME,
+    M_HEAP_MEMORY.CATEGORY,
+    M_HEAP_MEMORY.INCLUSIVE_SIZE_IN_USE / 1024 / 1024 / 1024 AS INCLUSIVE_SIZE_IN_USE,
+    M_HEAP_MEMORY.EXCLUSIVE_SIZE_IN_USE / 1024 / 1024 / 1024 AS EXCLUSIVE_SIZE_IN_USE,
+    ROUND(
+      (M_HEAP_MEMORY.EXCLUSIVE_SIZE_IN_USE / 1024 / 1024 / 1024) /
+      (SELECT TOP 1 ROUND((HEAP_MEMORY_ALLOCATED_SIZE + SHARED_MEMORY_USED_SIZE) / 1024 / 1024 / 1024, 2)
+       FROM _SYS_STATISTICS.HOST_SERVICE_MEMORY
+       WHERE SERVICE_NAME = 'nameserver'
+         AND HOST IN (SELECT HOST FROM M_SERVICES
+                      WHERE COORDINATOR_TYPE = 'MASTER' AND SERVICE_NAME = 'nameserver')
+       ORDER BY SNAPSHOT_ID DESC) * 100, 2) AS PERCENT_FROM_TOTAL
+  FROM M_HEAP_MEMORY, M_SERVICES
+  WHERE M_HEAP_MEMORY.PORT  = M_SERVICES.PORT
+    AND M_HEAP_MEMORY.HOST  = M_SERVICES.HOST
+    AND M_SERVICES.SERVICE_NAME = 'nameserver'
+  ORDER BY M_HEAP_MEMORY.EXCLUSIVE_SIZE_IN_USE DESC
+)
+WHERE PERCENT_FROM_TOTAL > 30;
+
+
+--------------------------------------------------------------------------------
+-- Q12 | fct_check_memory
+-- PURPOSE : Top 10 nameserver memory allocators with percentage of total memory
+-- RUNS ON : SYSTEMDB only
+-- CONDITION: Runs only when Q11 returns > 0
+--------------------------------------------------------------------------------
+SELECT TOP 10
+  M_SERVICES.HOST,
+  M_SERVICES.SERVICE_NAME,
+  M_HEAP_MEMORY.CATEGORY,
+  M_HEAP_MEMORY.INCLUSIVE_SIZE_IN_USE / 1024 / 1024 / 1024 AS INCLUSIVE_SIZE_IN_USE,
+  M_HEAP_MEMORY.EXCLUSIVE_SIZE_IN_USE / 1024 / 1024 / 1024 AS EXCLUSIVE_SIZE_IN_USE,
+  ROUND(
+    (M_HEAP_MEMORY.EXCLUSIVE_SIZE_IN_USE / 1024 / 1024 / 1024) /
+    (SELECT TOP 1 ROUND((HEAP_MEMORY_ALLOCATED_SIZE + SHARED_MEMORY_USED_SIZE) / 1024 / 1024 / 1024, 2)
+     FROM _SYS_STATISTICS.HOST_SERVICE_MEMORY
+     WHERE SERVICE_NAME = 'nameserver'
+       AND HOST IN (SELECT HOST FROM M_SERVICES
+                    WHERE COORDINATOR_TYPE = 'MASTER' AND SERVICE_NAME = 'nameserver')
+     ORDER BY SNAPSHOT_ID DESC) * 100, 2) AS PERCENT_FROM_TOTAL
+FROM M_HEAP_MEMORY, M_SERVICES
+WHERE M_HEAP_MEMORY.PORT  = M_SERVICES.PORT
+  AND M_HEAP_MEMORY.HOST  = M_SERVICES.HOST
+  AND M_SERVICES.SERVICE_NAME = 'nameserver'
+ORDER BY M_HEAP_MEMORY.EXCLUSIVE_SIZE_IN_USE DESC;
+
+
+--------------------------------------------------------------------------------
+-- Q13 | fct_check_memory
+-- PURPOSE : Count OOM trace files on SYSTEMDB in last 40 days
+-- RUNS ON : SYSTEMDB only
+--------------------------------------------------------------------------------
+SELECT COUNT(1) FROM (
+  SELECT *
+  FROM M_TRACEFILES
+  WHERE SECONDS_BETWEEN(FILE_MTIME, CURRENT_TIMESTAMP) <= 3456000
+    AND FILE_NAME LIKE '%oom%'
+);
+
+
+--------------------------------------------------------------------------------
+-- Q14 | fct_check_memory
+-- PURPOSE : OOM trace file names and timestamps on SYSTEMDB (top 50)
+-- RUNS ON : SYSTEMDB only
+-- CONDITION: Runs only when Q13 returns > 0
+--------------------------------------------------------------------------------
+SELECT TOP 50 FILE_NAME, FILE_MTIME
+FROM M_TRACEFILES
+WHERE SECONDS_BETWEEN(FILE_MTIME, CURRENT_TIMESTAMP) <= 3456000
+  AND FILE_NAME LIKE '%oom%'
+ORDER BY FILE_MTIME DESC;
+
+
+================================================================================
+  REFERENCE
+  Time window : SECONDS_BETWEEN(...) <= 3456000  =  40 days
+  Big table   : > 1,500,000,000 records (column store only)
+  Memory alloc: > 30% of total nameserver memory
+  Backup views: SYS_DATABASES.M_BACKUP_CATALOG / M_BACKUP_CATALOG_FILES
+                (cross-database views, accessible from SYSTEMDB only)
+================================================================================

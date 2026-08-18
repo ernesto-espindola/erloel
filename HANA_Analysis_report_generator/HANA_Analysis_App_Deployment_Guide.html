@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HANA Analysis Report Generator – Deployment Guide</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',Arial,sans-serif;font-size:14px;background:#e8f4fd;color:#1a1a1a;line-height:1.6}
+  a{color:#0057a8;text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  /* ── Header ── */
+  .hdr{background:linear-gradient(135deg,#003366 0%,#0057a8 60%,#00b4e6 100%);padding:18px 32px;position:sticky;top:0;z-index:999}
+  .hdr-title{color:#fff;font-size:1.3rem;font-weight:700}
+  .hdr-sub{color:#a8d0f0;font-size:0.8rem;margin-top:2px}
+
+  /* ── Nav ── */
+  .nav{background:#003366;padding:6px 24px;display:flex;flex-wrap:wrap;gap:6px;position:sticky;top:64px;z-index:998}
+  .nav a{color:#a8d0f0;font-size:0.75rem;padding:4px 13px;border-radius:20px;text-decoration:none;transition:.2s}
+  .nav a:hover{background:#0057a8;color:#fff}
+
+  /* ── Layout ── */
+  .page{max-width:1100px;margin:0 auto;padding:24px 20px}
+  .section{background:#fff;border-radius:10px;box-shadow:0 2px 6px rgba(0,83,168,.1);margin-bottom:24px;overflow:hidden}
+  .section-hdr{padding:14px 20px;background:#f0f7ff;border-bottom:1px solid #d0e4f8;cursor:default}
+  .section-hdr h2{font-size:1rem;font-weight:700;color:#003366}
+  .section-hdr .badge{float:right;font-size:0.7rem;font-weight:700;padding:2px 10px;border-radius:10px;text-transform:uppercase;letter-spacing:.3px}
+  .badge-req{background:#fde8e8;color:#a02020}
+  .badge-opt{background:#d4edda;color:#155724}
+  .badge-info{background:#cce5ff;color:#004085}
+  .section-body{padding:20px}
+
+  /* ── Steps ── */
+  .steps{counter-reset:step;list-style:none;padding:0}
+  .steps li{counter-increment:step;position:relative;padding:10px 14px 10px 48px;border-bottom:1px solid #e8f0f8}
+  .steps li:last-child{border-bottom:none}
+  .steps li::before{content:counter(step);position:absolute;left:10px;top:10px;width:26px;height:26px;background:#0057a8;color:#fff;border-radius:50%;font-weight:700;font-size:0.8rem;display:flex;align-items:center;justify-content:center}
+  .steps li strong{color:#003366;display:block;margin-bottom:3px}
+
+  /* ── Tables ── */
+  .tbl-wrap{overflow-x:auto;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin:12px 0}
+  table{width:100%;border-collapse:collapse;font-size:0.82rem}
+  thead{background:#003366;color:#fff}
+  thead th{padding:9px 14px;font-weight:600;text-align:left}
+  tbody tr:nth-child(even){background:#f0f7ff}
+  tbody tr:hover{background:#d0e8ff}
+  td{padding:8px 14px;border-bottom:1px solid #e8f0f8;vertical-align:top}
+  td code{background:#f0f7ff;border:1px solid #d0e4f8;border-radius:3px;padding:1px 5px;font-size:0.8rem;color:#003366}
+
+  /* ── Code blocks ── */
+  pre{background:#1e2a3a;color:#a8d0f0;border-radius:8px;padding:16px 18px;font-size:0.78rem;overflow-x:auto;margin:10px 0;line-height:1.5}
+  pre .cmt{color:#6b8fa8}
+  pre .kw{color:#7ec8e3}
+  pre .str{color:#a8ff78}
+  pre .var{color:#f0ad4e}
+  code.inline{background:#f0f7ff;border:1px solid #d0e4f8;border-radius:3px;padding:1px 6px;font-size:0.82rem;color:#003366}
+
+  /* ── Info boxes ── */
+  .box{border-radius:0 8px 8px 0;padding:12px 16px;margin:12px 0;font-size:0.85rem}
+  .box-blue{border-left:4px solid #0057a8;background:#f0f7ff}
+  .box-green{border-left:4px solid #5cb85c;background:#f0fff4}
+  .box-orange{border-left:4px solid #f0ad4e;background:#fffdf0}
+  .box-red{border-left:4px solid #d9534f;background:#fff5f5}
+  .box h4{font-size:0.85rem;font-weight:700;margin-bottom:6px;color:#003366}
+
+  /* ── Pill ── */
+  .pill{display:inline-block;padding:1px 9px;border-radius:10px;font-size:0.7rem;font-weight:700}
+  .pill-red{background:#fde8e8;color:#a02020}
+  .pill-green{background:#d4edda;color:#155724}
+  .pill-orange{background:#fff3cd;color:#856404}
+  .pill-blue{background:#cce5ff;color:#004085}
+
+  /* ── File tree ── */
+  .tree{font-family:Consolas,monospace;font-size:0.82rem;background:#f8fbff;border:1px solid #d0e4f8;border-radius:6px;padding:14px 18px;line-height:1.8}
+  .tree .dir{color:#0057a8;font-weight:700}
+  .tree .file{color:#333}
+  .tree .note{color:#888;font-style:italic}
+  .tree .req{color:#d9534f;font-weight:700}
+  .tree .opt{color:#5cb85c}
+
+  /* ── Footer ── */
+  footer{text-align:center;font-size:0.75rem;color:#888;padding:20px;margin-top:8px}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-title">📄 HANA Analysis Report Generator — Deployment Guide</div>
+  <div class="hdr-sub">How to install and run the app on a new Windows machine &nbsp;|&nbsp; v6.01 &nbsp;|&nbsp; RDE LAC</div>
+</div>
+
+<div class="nav">
+  <a href="#overview">Overview</a>
+  <a href="#prereq">Prerequisites</a>
+  <a href="#files">Required Files</a>
+  <a href="#config">Configuration</a>
+  <a href="#install">Manual Install</a>
+  <a href="#installer">Automated Installer</a>
+  <a href="#run">Running the App</a>
+  <a href="#proxy">SAP AI Proxy</a>
+  <a href="#troubleshoot">Troubleshooting</a>
+</div>
+
+<div class="page">
+
+  <!-- ── OVERVIEW ── -->
+  <div class="section" id="overview">
+    <div class="section-hdr">
+      <h2>📋 Overview</h2>
+    </div>
+    <div class="section-body">
+      <p>The <strong>HANA Analysis Report Generator</strong> is a Windows desktop application (Python / Tkinter GUI) that reads a SAP HANA Health Check output file and automatically generates a formatted HTML analysis report — and optionally a PowerPoint presentation — using the Claude AI API (via SAP's internal AI proxy).</p>
+      <br>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Feature</th><th>Details</th></tr></thead>
+          <tbody>
+            <tr><td>Platform</td><td>Windows 10 / 11 (64-bit)</td></tr>
+            <tr><td>Language</td><td>Python 3.10 or later</td></tr>
+            <tr><td>GUI framework</td><td>Tkinter (included with Python on Windows)</td></tr>
+            <tr><td>AI backend</td><td>Claude (Anthropic) via SAP internal AI proxy</td></tr>
+            <tr><td>Output</td><td>Interactive HTML report + optional PPTX</td></tr>
+            <tr><td>Source file</td><td><code>hana_analysis_app_v6.01.py</code></td></tr>
+            <tr><td>Prompt template</td><td><code>HANA_HealthCheck_Prompt_Template.md</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="box box-blue">
+        <h4>How it works</h4>
+        The user selects a HANA Health Check <code>.txt</code> output file via the GUI. The app reads the prompt template, injects the health check text, and sends the full prompt to Claude via the SAP AI proxy using streaming. The generated HTML is post-processed (CSS injection, SAP logo, footer) and saved to the <code>Results/</code> folder, then opened automatically in Microsoft Edge.
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PREREQUISITES ── -->
+  <div class="section" id="prereq">
+    <div class="section-hdr">
+      <h2>⚙ Prerequisites</h2>
+      <span class="badge badge-req">Required</span>
+    </div>
+    <div class="section-body">
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Requirement</th><th>Version</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><strong>Python</strong></td>
+              <td>3.10 or later<br><span class="pill pill-green">Recommended: 3.13+</span></td>
+              <td>Download from <a href="https://www.python.org/downloads/" target="_blank">python.org</a>. During installation check <strong>"Add Python to PATH"</strong>.</td>
+            </tr>
+            <tr>
+              <td><strong>pip</strong></td>
+              <td>Latest</td>
+              <td>Included with Python. Verify: <code>pip --version</code></td>
+            </tr>
+            <tr>
+              <td><strong>Microsoft Edge</strong></td>
+              <td>Any modern version</td>
+              <td>Used to auto-open generated reports. Path must match <code>EDGE_PATH</code> in the app (default: <code>C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe</code>). If installed elsewhere, update the constant.</td>
+            </tr>
+            <tr>
+              <td><strong>SAP AI Proxy token</strong></td>
+              <td>—</td>
+              <td>A valid internal SAP auth token for the AI proxy endpoint. Contact your team lead or the ECS AI team to obtain one.</td>
+            </tr>
+            <tr>
+              <td><strong>SAP AI Proxy endpoint</strong></td>
+              <td>—</td>
+              <td>The app uses a locally-running proxy by default (<code>http://localhost:6655/anthropic/</code>). See the <a href="#proxy">SAP AI Proxy</a> section for details.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 style="color:#003366;margin-top:18px;margin-bottom:10px">Python packages</h3>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Package</th><th>Version</th><th>Purpose</th><th>Required?</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>anthropic</code></td>
+              <td>≥ 0.40</td>
+              <td>Claude API client — streaming response, message building</td>
+              <td><span class="pill pill-red">Required</span></td>
+            </tr>
+            <tr>
+              <td><code>python-pptx</code></td>
+              <td>≥ 1.0</td>
+              <td>PowerPoint export feature</td>
+              <td><span class="pill pill-green">Optional</span></td>
+            </tr>
+            <tr>
+              <td><code>tkinter</code></td>
+              <td>built-in</td>
+              <td>GUI framework</td>
+              <td><span class="pill pill-blue">Built-in</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <pre><span class="cmt"># Install required packages</span>
+pip install anthropic
+
+<span class="cmt"># Optional — only needed for PowerPoint export</span>
+pip install python-pptx</pre>
+    </div>
+  </div>
+
+  <!-- ── REQUIRED FILES ── -->
+  <div class="section" id="files">
+    <div class="section-hdr">
+      <h2>📁 Required Files and Directory Structure</h2>
+      <span class="badge badge-req">Required</span>
+    </div>
+    <div class="section-body">
+      <p>The app expects a specific folder structure. All paths are configured by the <code>WORKING_DIR</code> constant in the Python source. Below is the layout on the original machine — adapt as needed.</p>
+      <br>
+      <div class="tree">
+        <span class="dir">&lt;WORKING_DIR&gt;\</span>  &nbsp;<span class="note">(e.g. C:\HANA_Analysis_App\)</span><br>
+        │<br>
+        ├── <span class="req">HANA_HealthCheck_Prompt_Template.md</span> &nbsp;<span class="note">← main AI prompt (REQUIRED)</span><br>
+        ├── <span class="req">HANA_latest_release.txt</span> &nbsp;<span class="note">← HANA version reference (REQUIRED)</span><br>
+        ├── <span class="opt">SAP_LOGO.png</span> &nbsp;<span class="note">← SAP logo embedded in reports (optional)</span><br>
+        │<br>
+        ├── <span class="dir">HANA_Analysis_report_generator\</span><br>
+        │   ├── <span class="req">hana_analysis_app_v6.01.py</span> &nbsp;<span class="note">← the application</span><br>
+        │   └── <span class="dir">Previous versions\</span> &nbsp;<span class="note">← archived older versions</span><br>
+        │<br>
+        ├── <span class="dir">HANA Health Check Reports\</span> &nbsp;<span class="note">← place input .txt files here</span><br>
+        │<br>
+        └── <span class="dir">Results\</span> &nbsp;<span class="note">← generated HTML/PPTX output (auto-created)</span><br>
+      </div>
+      <br>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>File</th><th>Required?</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>HANA_HealthCheck_Prompt_Template.md</code></td>
+              <td><span class="pill pill-red">Yes</span></td>
+              <td>The full Claude prompt that defines every section, style rule, glossary, and analysis logic for the HTML report. Without this file the app cannot run.</td>
+            </tr>
+            <tr>
+              <td><code>HANA_latest_release.txt</code></td>
+              <td><span class="pill pill-red">Yes</span></td>
+              <td>Plain text file containing the current HANA release/SPS/revision reference. Appended to every prompt so Claude can compare the installed version to the latest. Update periodically.</td>
+            </tr>
+            <tr>
+              <td><code>SAP_LOGO.png</code></td>
+              <td><span class="pill pill-green">No</span></td>
+              <td>SAP logo PNG that gets base64-embedded into every generated HTML report. If absent the logo area is left blank — the app still works.</td>
+            </tr>
+            <tr>
+              <td><code>hana_analysis_app_v6.01.py</code></td>
+              <td><span class="pill pill-red">Yes</span></td>
+              <td>The main application script.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CONFIGURATION ── -->
+  <div class="section" id="config">
+    <div class="section-hdr">
+      <h2>🔧 Configuration</h2>
+      <span class="badge badge-req">Required</span>
+    </div>
+    <div class="section-body">
+      <p>There are <strong>two configuration points</strong> that must be adapted when moving to a new machine.</p>
+
+      <h3 style="color:#003366;margin:16px 0 8px">1 — Hardcoded paths inside the .py file</h3>
+      <p>Open <code>hana_analysis_app_v6.01.py</code> and edit the four constants at the top of the file (lines 35–41):</p>
+      <pre><span class="cmt"># ── Config — EDIT THESE FOR YOUR MACHINE ─────────────────────────────</span>
+<span class="var">WORKING_DIR</span>   = Path(<span class="str">r"C:\HANA_Analysis_App"</span>)            <span class="cmt"># &lt;-- your working folder</span>
+<span class="var">TEMPLATE_FILE</span> = WORKING_DIR / <span class="str">"HANA_HealthCheck_Prompt_Template.md"</span>
+<span class="var">RELEASE_FILE</span>  = WORKING_DIR / <span class="str">"HANA_latest_release.txt"</span>
+<span class="var">OUTPUT_DIR</span>    = WORKING_DIR / <span class="str">"Results"</span>
+<span class="var">LOGO_PATH</span>     = WORKING_DIR / <span class="str">"SAP_LOGO.png"</span>
+<span class="var">EDGE_PATH</span>     = <span class="str">r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"</span>
+<span class="var">SETTINGS_FILE</span> = Path(<span class="str">r"C:\Users\YOUR_USER\.claude\settings.json"</span>)   <span class="cmt"># &lt;-- your user folder</span></pre>
+
+      <div class="box box-orange">
+        <h4>Important — SETTINGS_FILE</h4>
+        This path points to the Claude Code <code>settings.json</code> file where the AI proxy token and endpoint URL are read from. If Claude Code is not installed on the target machine, create the file manually (see below). The folder <code>.claude</code> must exist under the user's home directory.
+      </div>
+
+      <h3 style="color:#003366;margin:16px 0 8px">2 — settings.json (AI proxy credentials)</h3>
+      <p>The app reads the following keys from <code>%USERPROFILE%\.claude\settings.json</code>:</p>
+      <pre>{
+  <span class="str">"env"</span>: {
+    <span class="str">"ANTHROPIC_BASE_URL"</span>: <span class="str">"http://localhost:6655/anthropic/"</span>,   <span class="cmt">// SAP AI proxy endpoint</span>
+    <span class="str">"ANTHROPIC_AUTH_TOKEN"</span>: <span class="str">"your-sap-ai-token-here"</span>,               <span class="cmt">// SAP AI token (UUID format)</span>
+    <span class="str">"ANTHROPIC_MODEL"</span>: <span class="str">"claude-sonnet-latest"</span>                      <span class="cmt">// model to use</span>
+  }
+}</pre>
+      <div class="box box-blue">
+        <h4>Token format</h4>
+        The <code>ANTHROPIC_AUTH_TOKEN</code> is a SAP-internal UUID-format token (e.g. <code>xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx</code>), NOT a standard Anthropic API key. Obtain it from your team lead or the SAP ECS AI team. The token is sent as a Bearer token to the SAP AI proxy, which forwards requests to the real Anthropic API on your behalf.
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MANUAL INSTALL ── -->
+  <div class="section" id="install">
+    <div class="section-hdr">
+      <h2>🛠 Manual Installation Steps</h2>
+      <span class="badge badge-info">Step by step</span>
+    </div>
+    <div class="section-body">
+      <ol class="steps">
+        <li>
+          <strong>Install Python 3.10 or later</strong>
+          Download the Windows installer from <a href="https://www.python.org/downloads/" target="_blank">python.org</a>.<br>
+          During setup: check <strong>✅ Add Python to PATH</strong> and <strong>✅ Install for all users</strong> (optional).<br>
+          Verify from a command prompt: <code>python --version</code>
+        </li>
+        <li>
+          <strong>Install Python packages</strong>
+          Open Command Prompt or PowerShell and run:
+          <pre>pip install anthropic
+pip install python-pptx    <span class="cmt">(optional — for PowerPoint export)</span></pre>
+        </li>
+        <li>
+          <strong>Create the working directory</strong>
+          Create a folder where the app will live, for example:
+          <pre>mkdir C:\HANA_Analysis_App
+mkdir C:\HANA_Analysis_App\HANA_Analysis_report_generator
+mkdir "C:\HANA_Analysis_App\HANA Health Check Reports"
+mkdir C:\HANA_Analysis_App\Results</pre>
+        </li>
+        <li>
+          <strong>Copy the required files</strong>
+          Copy the following files from the source machine / shared location to the new working directory:
+          <ul style="margin-top:8px;padding-left:24px;line-height:1.9">
+            <li><code>HANA_HealthCheck_Prompt_Template.md</code> → <code>&lt;WORKING_DIR&gt;\</code></li>
+            <li><code>HANA_latest_release.txt</code> → <code>&lt;WORKING_DIR&gt;\</code></li>
+            <li><code>SAP_LOGO.png</code> → <code>&lt;WORKING_DIR&gt;\</code> (optional)</li>
+            <li><code>hana_analysis_app_v6.01.py</code> → <code>&lt;WORKING_DIR&gt;\HANA_Analysis_report_generator\</code></li>
+          </ul>
+        </li>
+        <li>
+          <strong>Edit the paths in hana_analysis_app_v6.01.py</strong>
+          Open the file in Notepad or any text editor and update the constants at lines 35–41 to match the actual paths on the new machine (see the <a href="#config">Configuration</a> section for details).
+        </li>
+        <li>
+          <strong>Create the settings.json file</strong>
+          Create the folder and file:
+          <pre>mkdir %USERPROFILE%\.claude</pre>
+          Then create the file <code>%USERPROFILE%\.claude\settings.json</code> with your SAP AI proxy token (see the <a href="#config">Configuration</a> section for the exact JSON structure).
+        </li>
+        <li>
+          <strong>Verify the SAP AI Proxy is running</strong>
+          The app connects to <code>http://localhost:6655/anthropic/</code> by default. The proxy must be running on the target machine. See the <a href="#proxy">SAP AI Proxy</a> section.
+        </li>
+        <li>
+          <strong>Run the app</strong>
+          <pre>python "C:\HANA_Analysis_App\HANA_Analysis_report_generator\hana_analysis_app_v6.01.py"</pre>
+          Or create a shortcut / batch file (see <a href="#run">Running the App</a>).
+        </li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- ── AUTOMATED INSTALLER ── -->
+  <div class="section" id="installer">
+    <div class="section-hdr">
+      <h2>🚀 Automated Installer</h2>
+      <span class="badge badge-green">Recommended</span>
+    </div>
+    <div class="section-body">
+      <p>The file <code>install_hana_analysis_app.bat</code> (included in the same folder as this guide) automates all manual steps. Run it <strong>as Administrator</strong> on the target machine.</p>
+
+      <div class="box box-green">
+        <h4>What the installer does</h4>
+        <ul style="padding-left:20px;line-height:2">
+          <li>Checks Python is installed and accessible on PATH</li>
+          <li>Installs <code>anthropic</code> and <code>python-pptx</code> via pip</li>
+          <li>Prompts you for your working directory path and SAP AI token</li>
+          <li>Creates the full directory structure</li>
+          <li>Copies all required files from the source (script directory)</li>
+          <li>Patches the hardcoded paths in the .py file automatically</li>
+          <li>Writes <code>%USERPROFILE%\.claude\settings.json</code> with your token</li>
+          <li>Creates a desktop shortcut and a <code>run.bat</code> launcher</li>
+        </ul>
+      </div>
+
+      <h3 style="color:#003366;margin:14px 0 8px">Usage</h3>
+      <pre><span class="cmt">REM Right-click → Run as Administrator</span>
+install_hana_analysis_app.bat</pre>
+      <p>Follow the prompts. The installer will confirm each step and report any errors before continuing.</p>
+
+      <div class="box box-orange">
+        <h4>Prerequisites for the installer</h4>
+        The installer assumes all source files (<code>.py</code>, <code>.md</code>, <code>.txt</code>, <code>.png</code>) are in the <strong>same folder</strong> as the <code>.bat</code> file. If running from a network share, copy the entire folder locally first to avoid path issues.
+      </div>
+
+      <h3 style="color:#003366;margin:14px 0 8px">Installer script source</h3>
+      <p>Location: <code>HANA_Analysis_report_generator\install_hana_analysis_app.bat</code><br>
+      The script is plain Windows batch — no admin tools, no registry writes (except the desktop shortcut). You can inspect and edit it freely.</p>
+    </div>
+  </div>
+
+  <!-- ── RUNNING ── -->
+  <div class="section" id="run">
+    <div class="section-hdr">
+      <h2>▶ Running the App</h2>
+      <span class="badge badge-info">Usage</span>
+    </div>
+    <div class="section-body">
+      <h3 style="color:#003366;margin-bottom:10px">Option A — Desktop shortcut (recommended)</h3>
+      <p>The installer creates a shortcut on the desktop. Double-click to launch.</p>
+
+      <h3 style="color:#003366;margin:14px 0 10px">Option B — Batch launcher</h3>
+      <p>Create a file <code>run_hana_app.bat</code> in the working directory:</p>
+      <pre>@echo off
+<span class="kw">cd</span> /d <span class="str">"C:\HANA_Analysis_App\HANA_Analysis_report_generator"</span>
+<span class="kw">python</span> hana_analysis_app_v6.01.py
+<span class="kw">pause</span></pre>
+      <p>Double-click the <code>.bat</code> to launch. The <code>pause</code> keeps the console window open if there is a startup error.</p>
+
+      <h3 style="color:#003366;margin:14px 0 10px">Option C — Direct command line</h3>
+      <pre>python <span class="str">"C:\HANA_Analysis_App\HANA_Analysis_report_generator\hana_analysis_app_v6.01.py"</span></pre>
+
+      <h3 style="color:#003366;margin:14px 0 10px">Generating a report</h3>
+      <ol class="steps">
+        <li><strong>Click "Browse"</strong> and select the HANA Health Check <code>.txt</code> output file.</li>
+        <li><strong>Verify the file size</strong> shown — maximum is 2,500 KB. Files larger than this must be trimmed.</li>
+        <li><strong>Click "Generate Full Analysis Report"</strong>. The progress bar shows streaming status.</li>
+        <li><strong>Wait</strong> — generation typically takes 2–5 minutes depending on file size and model response time.</li>
+        <li><strong>The report opens automatically</strong> in Microsoft Edge when complete. It is also saved to the <code>Results\</code> folder.</li>
+        <li><strong>Optional: "Export to PowerPoint"</strong> button becomes active after a report is generated.</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- ── SAP AI PROXY ── -->
+  <div class="section" id="proxy">
+    <div class="section-hdr">
+      <h2>🔗 SAP AI Proxy</h2>
+      <span class="badge badge-req">Required</span>
+    </div>
+    <div class="section-body">
+      <p>The app does <strong>not</strong> connect to the public Anthropic API directly. It uses the SAP internal AI proxy, which handles authentication and routing to the Anthropic Claude API on behalf of SAP employees.</p>
+
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Parameter</th><th>Default value</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>Proxy endpoint</td>
+              <td><code>http://localhost:6655/anthropic/</code></td>
+              <td>The proxy runs locally (typically part of Claude Code or a separate SAP AI proxy agent). Verify it is running before starting the app.</td>
+            </tr>
+            <tr>
+              <td>Auth token</td>
+              <td><em>(UUID, personal)</em></td>
+              <td>Unique per user. Set in <code>settings.json</code> as <code>ANTHROPIC_AUTH_TOKEN</code>. Do not share this token.</td>
+            </tr>
+            <tr>
+              <td>Model</td>
+              <td><code>claude-sonnet-latest</code></td>
+              <td>Set via <code>ANTHROPIC_MODEL</code> in <code>settings.json</code>. Can be overridden at runtime via the model dropdown in the app.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="box box-blue">
+        <h4>Verify the proxy is running</h4>
+        Open a browser or run from command line:<br>
+        <code>curl http://localhost:6655/anthropic/</code><br>
+        If you get a response (even an error JSON), the proxy is alive. If the connection is refused, start the SAP AI proxy or Claude Code desktop agent before launching the app.
+      </div>
+
+      <div class="box box-orange">
+        <h4>If your proxy runs on a different port or URL</h4>
+        Update <code>ANTHROPIC_BASE_URL</code> in <code>settings.json</code> to match. The app reads this value at startup — no code change needed.
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TROUBLESHOOTING ── -->
+  <div class="section" id="troubleshoot">
+    <div class="section-hdr">
+      <h2>🔍 Troubleshooting</h2>
+      <span class="badge badge-info">Help</span>
+    </div>
+    <div class="section-body">
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Symptom</th><th>Likely cause</th><th>Fix</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>ModuleNotFoundError: No module named 'anthropic'</code></td>
+              <td>anthropic not installed</td>
+              <td><code>pip install anthropic</code></td>
+            </tr>
+            <tr>
+              <td>App opens but "Generate" button is greyed out</td>
+              <td>No file selected, or file exceeds 2,500 KB</td>
+              <td>Select a valid file; reduce file size if needed</td>
+            </tr>
+            <tr>
+              <td><em>Generation Failed: API error 401</em></td>
+              <td>Invalid or expired SAP AI token</td>
+              <td>Update <code>ANTHROPIC_AUTH_TOKEN</code> in <code>settings.json</code></td>
+            </tr>
+            <tr>
+              <td><em>Generation Failed: Connection refused</em></td>
+              <td>SAP AI proxy not running</td>
+              <td>Start the Claude Code desktop app or SAP AI proxy agent</td>
+            </tr>
+            <tr>
+              <td>Report opens but logo is missing</td>
+              <td><code>SAP_LOGO.png</code> not found in WORKING_DIR</td>
+              <td>Copy the PNG file to the working directory</td>
+            </tr>
+            <tr>
+              <td><em>FileNotFoundError: HANA_HealthCheck_Prompt_Template.md</em></td>
+              <td>Prompt template missing or WORKING_DIR path wrong</td>
+              <td>Verify the <code>WORKING_DIR</code> constant and that the <code>.md</code> file is present</td>
+            </tr>
+            <tr>
+              <td>Edge does not open after generation</td>
+              <td><code>EDGE_PATH</code> constant points to wrong location</td>
+              <td>Update <code>EDGE_PATH</code> in the .py file to match the Edge installation on the new machine</td>
+            </tr>
+            <tr>
+              <td>Response is not valid HTML (first 300 chars shown)</td>
+              <td>Claude returned an error or the model hit the token limit</td>
+              <td>Check the Generation Log in the app; reduce health check file size; try again</td>
+            </tr>
+            <tr>
+              <td><em>Export to PowerPoint — "python-pptx not installed"</em></td>
+              <td>python-pptx package missing</td>
+              <td><code>pip install python-pptx</code></td>
+            </tr>
+            <tr>
+              <td>tkinter GUI does not appear / crashes immediately</td>
+              <td>tkinter not bundled with the Python installation</td>
+              <td>Reinstall Python and ensure the <em>tcl/tk</em> optional feature is selected during setup. On a Windows Python installer this is enabled by default.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="box box-blue" style="margin-top:16px">
+        <h4>Getting the Generation Log</h4>
+        The log panel inside the app shows prompt size (in characters and estimated tokens), model used, streaming progress, and any errors. For persistent issues, copy the log content and share it with the tool maintainer (RDE LAC team).
+      </div>
+    </div>
+  </div>
+
+</div><!-- /page -->
+
+<footer>
+  HANA Analysis Report Generator — Deployment Guide &nbsp;|&nbsp; v6.01 &nbsp;|&nbsp; RDE LAC &nbsp;|&nbsp; 2026
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,29 @@
+
+Via Claude Code
+----------------
+
+run HANA_HealthCheck_Prompt_Template for VIP Customer health check report, 
+do it in silence mode.
+Save html on results and once generated open it on Edge web browser. 
+
+
+APP:
+------
+
+Create a python app where I can select a health check file and then execute HANA_HealthCheck_Prompt_Template
+in the end Save html on results and once generated open it on Edge web browser. 
+
+
+To add:
+
+		Handle bigger input files without time out
+		
+		Show progress bar or percentage of completion
+		
+		Rename it to SAP HANA FULL ANALYSIS REPORT GENERATOR
+		
+		ADD LEGENDS "RDE LAC"
+		
+		
+		
+		

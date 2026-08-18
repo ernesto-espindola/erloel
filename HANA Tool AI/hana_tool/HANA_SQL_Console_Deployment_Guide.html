@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HANA SQL Console — Deployment Guide</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',Arial,sans-serif;font-size:14px;background:#f0f2f5;color:#1a1a1a;line-height:1.6}
+  a{color:#0070d2;text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  .hdr{background:linear-gradient(90deg,#162b4a,#1e3a5f);padding:18px 32px;position:sticky;top:0;z-index:999;border-bottom:1px solid #0d1f35}
+  .hdr-title{color:#fff;font-size:1.25rem;font-weight:700;letter-spacing:.3px}
+  .hdr-title span{color:#b0c8e8}
+  .hdr-sub{color:#7a9ab8;font-size:0.78rem;margin-top:3px}
+
+  .nav{background:#1e3a5f;padding:6px 24px;display:flex;flex-wrap:wrap;gap:6px;position:sticky;top:64px;z-index:998}
+  .nav a{color:#b0c8e8;font-size:0.75rem;padding:4px 13px;border-radius:20px;text-decoration:none;transition:.2s}
+  .nav a:hover{background:#0070d2;color:#fff}
+
+  .page{max-width:1100px;margin:0 auto;padding:24px 20px}
+
+  .section{background:#fff;border-radius:10px;box-shadow:0 2px 6px rgba(14,30,60,.08);margin-bottom:22px;overflow:hidden}
+  .section-hdr{padding:13px 20px;background:#f5f7fa;border-bottom:1px solid #d1d5db;display:flex;align-items:center;justify-content:space-between}
+  .section-hdr h2{font-size:1rem;font-weight:700;color:#162b4a}
+  .badge{font-size:0.7rem;font-weight:700;padding:2px 10px;border-radius:10px;text-transform:uppercase;letter-spacing:.3px}
+  .badge-req{background:#fde8e8;color:#a02020}
+  .badge-opt{background:#d4edda;color:#155724}
+  .badge-info{background:#cce5ff;color:#004085}
+  .badge-warn{background:#fff3cd;color:#856404}
+  .section-body{padding:20px}
+
+  .steps{counter-reset:step;list-style:none;padding:0}
+  .steps li{counter-increment:step;position:relative;padding:10px 14px 10px 48px;border-bottom:1px solid #e8ecf0}
+  .steps li:last-child{border-bottom:none}
+  .steps li::before{content:counter(step);position:absolute;left:10px;top:10px;width:26px;height:26px;background:#0070d2;color:#fff;border-radius:50%;font-weight:700;font-size:0.8rem;display:flex;align-items:center;justify-content:center}
+  .steps li strong{color:#162b4a;display:block;margin-bottom:3px}
+
+  .tbl-wrap{overflow-x:auto;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.07);margin:12px 0}
+  table{width:100%;border-collapse:collapse;font-size:0.82rem}
+  thead{background:#162b4a;color:#fff}
+  thead th{padding:9px 14px;font-weight:600;text-align:left}
+  tbody tr:nth-child(even){background:#f5f7fa}
+  tbody tr:hover{background:#dde8f8}
+  td{padding:8px 14px;border-bottom:1px solid #e8ecf0;vertical-align:top}
+  td code{background:#f0f4fb;border:1px solid #d1d9e8;border-radius:3px;padding:1px 5px;font-size:0.8rem;color:#162b4a}
+
+  pre{background:#162b4a;color:#b0c8e8;border-radius:8px;padding:16px 18px;font-size:0.78rem;overflow-x:auto;margin:10px 0;line-height:1.6}
+  pre .cmt{color:#5a7a9a}
+  pre .kw{color:#7ec8e3}
+  pre .str{color:#a8ff78}
+  pre .var{color:#f0ad4e}
+
+  .box{border-radius:0 8px 8px 0;padding:12px 16px;margin:12px 0;font-size:0.85rem}
+  .box-blue{border-left:4px solid #0070d2;background:#eef4fc}
+  .box-green{border-left:4px solid #22c55e;background:#f0fff4}
+  .box-orange{border-left:4px solid #f59e0b;background:#fffdf0}
+  .box-red{border-left:4px solid #dc3545;background:#fff5f5}
+  .box h4{font-size:0.85rem;font-weight:700;margin-bottom:6px;color:#162b4a}
+
+  .pill{display:inline-block;padding:1px 9px;border-radius:10px;font-size:0.7rem;font-weight:700}
+  .pill-red{background:#fde8e8;color:#a02020}
+  .pill-green{background:#d4edda;color:#155724}
+  .pill-orange{background:#fff3cd;color:#856404}
+  .pill-blue{background:#cce5ff;color:#004085}
+
+  .tree{font-family:Consolas,monospace;font-size:0.82rem;background:#f8faff;border:1px solid #d1d9e8;border-radius:6px;padding:14px 18px;line-height:1.9}
+  .tree .dir{color:#0070d2;font-weight:700}
+  .tree .req{color:#dc3545;font-weight:700}
+  .tree .opt{color:#22c55e}
+  .tree .note{color:#888;font-style:italic}
+
+  .feat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin:14px 0}
+  .feat-card{background:#f5f7fa;border-radius:8px;padding:14px;border-top:3px solid #0070d2}
+  .feat-card h4{font-size:0.9rem;color:#162b4a;margin-bottom:6px}
+  .feat-card p{font-size:0.82rem;color:#444;line-height:1.5}
+
+  footer{text-align:center;font-size:0.75rem;color:#888;padding:20px;margin-top:8px}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-title">SAP HANA <span>SQL Console</span> — Deployment Guide</div>
+  <div class="hdr-sub">hana_tui_web_8.py &nbsp;|&nbsp; v8 &nbsp;|&nbsp; RDE LAC</div>
+</div>
+
+<div class="nav">
+  <a href="#overview">Overview</a>
+  <a href="#features">Features</a>
+  <a href="#prereq">Prerequisites</a>
+  <a href="#files">File Structure</a>
+  <a href="#install">Installation</a>
+  <a href="#installer">Auto Installer</a>
+  <a href="#run">Running</a>
+  <a href="#connect">Connecting to HANA</a>
+  <a href="#usage">Usage Guide</a>
+  <a href="#troubleshoot">Troubleshooting</a>
+</div>
+
+<div class="page">
+
+  <!-- OVERVIEW -->
+  <div class="section" id="overview">
+    <div class="section-hdr"><h2>📋 Overview</h2></div>
+    <div class="section-body">
+      <p>The <strong>SAP HANA SQL Console</strong> is a lightweight browser-based SQL workbench for SAP HANA databases. It runs entirely as a local Python process — no installation of a full SAP HANA Studio or SAP HANA Cockpit is required. Open a browser, connect, and query.</p>
+      <br>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Property</th><th>Value</th></tr></thead>
+          <tbody>
+            <tr><td>Script</td><td><code>hana_tui_web_8.py</code></td></tr>
+            <tr><td>Platform</td><td>Windows 10 / 11 (64-bit) — hdbcli native library is Windows-only</td></tr>
+            <tr><td>Language</td><td>Python 3.10 or later (stdlib only — no Flask, no Django)</td></tr>
+            <tr><td>UI</td><td>Browser-based single-page app served from <code>http://127.0.0.1:5000</code></td></tr>
+            <tr><td>HANA connection</td><td>hdbcli (SAP HANA Client Python library) — bundled in <code>lib\</code></td></tr>
+            <tr><td>Default port</td><td>5000 (localhost only — not exposed on the network)</td></tr>
+            <tr><td>External dependencies</td><td>None — all JS/CSS embedded; Chart.js served from local <code>lib\</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="box box-blue">
+        <h4>Self-contained design</h4>
+        The entire application — HTTP server, UI, API endpoints — is a single <code>.py</code> file. The HTML, CSS, and JavaScript are embedded directly in the Python source as the <code>HTML_PAGE</code> string. No internet connection is required after installation.
+      </div>
+    </div>
+  </div>
+
+  <!-- FEATURES -->
+  <div class="section" id="features">
+    <div class="section-hdr"><h2>✨ Features</h2></div>
+    <div class="section-body">
+      <div class="feat-grid">
+        <div class="feat-card">
+          <h4>🔌 HANA Connection</h4>
+          <p>Connect to any SAP HANA instance (on-prem or cloud) using hostname, port, username, and password. Connection state shown in the header with a live indicator dot.</p>
+        </div>
+        <div class="feat-card">
+          <h4>✏️ SQL Editor</h4>
+          <p>Multi-line SQL editor with Execute (F5) and Clear buttons. Supports any SQL statement. Row limit configurable (default 500, or unlimited).</p>
+        </div>
+        <div class="feat-card">
+          <h4>📊 Results Grid</h4>
+          <p>Tabular result display with column headers. Exports results as CSV. Shows execution time and row count. Warns when results are capped at the row limit.</p>
+        </div>
+        <div class="feat-card">
+          <h4>📁 Mini-Checks Library</h4>
+          <p>Sidebar with 35+ pre-built SAP HANA diagnostic SQL scripts (SAP Note mini-checks). Filter by name, click to load into the editor, execute directly.</p>
+        </div>
+        <div class="feat-card">
+          <h4>📦 Basic Bundle</h4>
+          <p>One-click execution of the full mini-check script bundle. Runs all scripts against the connected HANA, consolidates results into a single downloadable <code>.txt</code> file with a progress bar.</p>
+        </div>
+        <div class="feat-card">
+          <h4>🗂️ Output Manager</h4>
+          <p>Lists all saved output files. Download individual files, consolidate multiple files into one report, or clear the output folder.</p>
+        </div>
+        <div class="feat-card">
+          <h4>📈 Charts</h4>
+          <p>Embedded Chart.js for visual data representation. Loaded from the local <code>lib\</code> folder — no internet required.</p>
+        </div>
+        <div class="feat-card">
+          <h4>🔒 Local-only access</h4>
+          <p>Server binds to <code>127.0.0.1</code> only. The web interface is accessible only from the local machine, not from other hosts on the network.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PREREQUISITES -->
+  <div class="section" id="prereq">
+    <div class="section-hdr"><h2>⚙ Prerequisites</h2><span class="badge badge-req">Required</span></div>
+    <div class="section-body">
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Requirement</th><th>Version</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><strong>Python</strong></td>
+              <td>3.10 or later<br><span class="pill pill-green">Recommended: 3.13+</span></td>
+              <td>Download from <a href="https://www.python.org/downloads/" target="_blank">python.org</a>. Check <strong>"Add Python to PATH"</strong> during install. The bundled <code>hdbcli</code> requires <strong>Python 3.10+ on Windows 64-bit</strong> (ABI3-compatible wheel).</td>
+            </tr>
+            <tr>
+              <td><strong>Windows 64-bit</strong></td>
+              <td>Windows 10 / 11</td>
+              <td><code>pyhdbcli.pyd</code> is a Windows 64-bit native extension. The app will NOT run on Linux or macOS without replacing the hdbcli library.</td>
+            </tr>
+            <tr>
+              <td><strong>Port 5000 available</strong></td>
+              <td>—</td>
+              <td>The server listens on <code>localhost:5000</code>. If another app uses that port, the server will fail to start. Change the port by editing line 3140 of the script: <code>host, port = "127.0.0.1", 5000</code></td>
+            </tr>
+            <tr>
+              <td><strong>Network access to HANA</strong></td>
+              <td>—</td>
+              <td>The machine must be able to reach the HANA server on its SQL port (e.g. 30013, 30015, 30041) via TCP. VPN or jump host access may be required.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 style="color:#162b4a;margin:16px 0 8px">Python packages</h3>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Package</th><th>Purpose</th><th>Source</th><th>Required?</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>hdbcli</code></td>
+              <td>SAP HANA Client — connects to HANA via dbapi</td>
+              <td><span class="pill pill-green">Bundled in <code>lib\</code></span> — loaded automatically, no pip needed</td>
+              <td><span class="pill pill-red">Required</span></td>
+            </tr>
+            <tr>
+              <td>stdlib: <code>http.server</code>, <code>json</code>, <code>threading</code>, <code>webbrowser</code>, <code>urllib</code></td>
+              <td>HTTP server, JSON API, browser launch</td>
+              <td>Built into Python — no install needed</td>
+              <td><span class="pill pill-blue">Built-in</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="box box-green">
+        <h4>No pip install required</h4>
+        The <code>lib\</code> sub-folder contains hdbcli pre-extracted. The script automatically adds it to <code>sys.path</code> at startup. You only need Python installed — no additional packages to install.
+      </div>
+    </div>
+  </div>
+
+  <!-- FILE STRUCTURE -->
+  <div class="section" id="files">
+    <div class="section-hdr"><h2>📁 File Structure</h2><span class="badge badge-req">Must copy all items marked Required</span></div>
+    <div class="section-body">
+      <p>The app is <strong>fully self-contained in its folder</strong>. All paths are relative to the script's location — no hardcoded absolute paths. Copy the entire folder to deploy.</p>
+      <br>
+      <div class="tree">
+        <span class="dir">hana_tool\</span>  &nbsp;<span class="note">← copy this entire folder to the new machine</span><br>
+        │<br>
+        ├── <span class="req">hana_tui_web_8.py</span>  &nbsp;<span class="note">← the application (REQUIRED)</span><br>
+        │<br>
+        ├── <span class="dir req">lib\</span>  &nbsp;<span class="note">← bundled libraries (REQUIRED — do not rename)</span><br>
+        │   ├── <span class="req">hdbcli\</span>  &nbsp;<span class="note">← HANA Python client package</span><br>
+        │   ├── <span class="req">pyhdbcli.pyd</span>  &nbsp;<span class="note">← HANA native Windows extension (Win64 only)</span><br>
+        │   └── <span class="opt">chart.umd.min.js</span>  &nbsp;<span class="note">← Chart.js served at /static/chart.umd.min.js</span><br>
+        │<br>
+        ├── <span class="dir req">mini_checks\</span>  &nbsp;<span class="note">← SQL script files (REQUIRED for scripts / bundle features)</span><br>
+        │   ├── HANA_Backups_BackupRuns_2.00.070+.txt<br>
+        │   ├── HANA_Configuration_Overview_2.00.040+.txt<br>
+        │   └── <span class="note">... 35+ script files ...</span><br>
+        │<br>
+        ├── <span class="dir opt">output\</span>  &nbsp;<span class="note">← generated CSV/TXT files (auto-created on first save)</span><br>
+        │<br>
+        └── <span class="dir opt">packages\</span>  &nbsp;<span class="note">← offline .whl files for reference (not needed at runtime)</span><br>
+      </div>
+      <br>
+      <div class="box box-orange">
+        <h4>Critical: keep lib\ and mini_checks\ together with the script</h4>
+        Both directories must be in the <strong>same folder</strong> as <code>hana_tui_web_8.py</code>. If you move just the <code>.py</code> file without the supporting folders, hdbcli will fail to load and the mini-check library will be empty.
+      </div>
+    </div>
+  </div>
+
+  <!-- MANUAL INSTALLATION -->
+  <div class="section" id="install">
+    <div class="section-hdr"><h2>🛠 Manual Installation Steps</h2><span class="badge badge-info">Step by step</span></div>
+    <div class="section-body">
+      <ol class="steps">
+        <li>
+          <strong>Install Python 3.10 or later (Windows 64-bit installer)</strong>
+          Download from <a href="https://www.python.org/downloads/" target="_blank">python.org</a>.<br>
+          During setup: ✅ <strong>Add Python to PATH</strong> &nbsp;|&nbsp; ✅ <strong>Install launcher for all users</strong><br>
+          Verify: open Command Prompt → <code>python --version</code>
+        </li>
+        <li>
+          <strong>Copy the entire hana_tool\ folder to the new machine</strong>
+          Copy from the source (shared drive, USB, OneDrive) to any local path, for example:
+          <pre>C:\HANA_Tools\hana_tool\</pre>
+          The folder must contain: <code>hana_tui_web_8.py</code>, <code>lib\</code>, <code>mini_checks\</code>.
+        </li>
+        <li>
+          <strong>Verify hdbcli loads correctly</strong>
+          Open Command Prompt, navigate to the folder, and test:
+          <pre>cd C:\HANA_Tools\hana_tool
+python -c "from hdbcli import dbapi; print('hdbcli OK')"</pre>
+          Expected output: <code>hdbcli OK</code><br>
+          If you see an ImportError, check that <code>lib\pyhdbcli.pyd</code> exists and Python is 64-bit 3.10+.
+        </li>
+        <li>
+          <strong>Create a run launcher (optional but recommended)</strong>
+          Create a file <code>run.bat</code> in the <code>hana_tool\</code> folder:
+          <pre>@echo off
+cd /d "%~dp0"
+python hana_tui_web_8.py
+pause</pre>
+          Double-click it to start the console. The <code>pause</code> keeps the window open if there is an error.
+        </li>
+        <li>
+          <strong>Create a desktop shortcut (optional)</strong>
+          Right-click the Desktop → New → Shortcut.<br>
+          Target: <code>C:\HANA_Tools\hana_tool\run.bat</code><br>
+          Name: <code>HANA SQL Console</code>
+        </li>
+        <li>
+          <strong>Run the app</strong>
+          Double-click <code>run.bat</code> or the desktop shortcut. The browser opens automatically at <code>http://127.0.0.1:5000</code>. The console window must stay open while you use the app — closing it stops the server.
+        </li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- AUTO INSTALLER -->
+  <div class="section" id="installer">
+    <div class="section-hdr"><h2>🚀 Automated Installer</h2><span class="badge badge-opt">Recommended</span></div>
+    <div class="section-body">
+      <p>The file <code>install_hana_sql_console.bat</code> (in the same folder as this guide) automates the setup on a new machine.</p>
+      <div class="box box-green">
+        <h4>What the installer does</h4>
+        <ul style="padding-left:20px;line-height:2">
+          <li>Checks Python is installed and is 64-bit 3.10+</li>
+          <li>Prompts for the target installation directory</li>
+          <li>Copies the entire <code>hana_tool\</code> folder to the chosen location</li>
+          <li>Verifies hdbcli loads correctly after copy</li>
+          <li>Creates <code>run.bat</code> launcher in the install directory</li>
+          <li>Creates a desktop shortcut</li>
+          <li>Optionally checks that port 5000 is free</li>
+        </ul>
+      </div>
+      <h3 style="color:#162b4a;margin:14px 0 8px">Usage</h3>
+      <pre><span class="cmt">REM Copy the hana_tool\ folder to the new machine, then run:</span>
+install_hana_sql_console.bat</pre>
+      <div class="box box-orange">
+        <h4>Source folder requirement</h4>
+        Run the installer from inside the <code>hana_tool\</code> folder (or ensure <code>lib\</code> and <code>mini_checks\</code> are present next to the <code>.bat</code> file). The installer copies everything from its own directory to the target.
+      </div>
+    </div>
+  </div>
+
+  <!-- RUNNING -->
+  <div class="section" id="run">
+    <div class="section-hdr"><h2>▶ Running the App</h2><span class="badge badge-info">Usage</span></div>
+    <div class="section-body">
+      <h3 style="color:#162b4a;margin-bottom:10px">Start the server</h3>
+      <p>The app is a local HTTP server. You must keep the console window (or Command Prompt) open while using it.</p>
+      <pre><span class="cmt"># Option A — double-click run.bat (if created by installer)</span>
+
+<span class="cmt"># Option B — command line</span>
+cd C:\HANA_Tools\hana_tool
+python hana_tui_web_8.py
+
+<span class="cmt"># Expected output:</span>
+HANA SQL Console v6.0 running at http://127.0.0.1:5000  (Ctrl+C to stop)</pre>
+
+      <p>The browser opens automatically at <code>http://127.0.0.1:5000</code>. If it does not, open it manually.</p>
+
+      <h3 style="color:#162b4a;margin:16px 0 8px">Stop the server</h3>
+      <p>Press <strong>Ctrl+C</strong> in the console window, or close the window.</p>
+
+      <div class="box box-blue">
+        <h4>Multiple instances</h4>
+        Do not run two instances of the app at the same time — the second one will fail to bind to port 5000. Stop the first instance before starting a new one.
+      </div>
+    </div>
+  </div>
+
+  <!-- CONNECTING -->
+  <div class="section" id="connect">
+    <div class="section-hdr"><h2>🔌 Connecting to SAP HANA</h2><span class="badge badge-req">Required before any query</span></div>
+    <div class="section-body">
+      <p>After opening the browser, the connection panel appears at the top. Fill in the HANA connection details and click <strong>Connect</strong>.</p>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Field</th><th>Default</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Host</strong></td><td><em>empty</em></td><td>Hostname or IP address of the SAP HANA server (e.g. <code>vhbozehpdb01</code> or <code>10.x.x.x</code>)</td></tr>
+            <tr><td><strong>Port</strong></td><td><code>30241</code></td><td>HANA SQL port. Common values: <code>30013</code> (MDC system DB), <code>30015</code>, <code>30041</code> (tenant ports). For non-default instances, port = 3&lt;NN&gt;13 where NN = instance number.</td></tr>
+            <tr><td><strong>Database</strong></td><td><code>HP4</code></td><td>Tenant database name (for MDC). For SystemDB connections use <code>SYSTEMDB</code>.</td></tr>
+            <tr><td><strong>User</strong></td><td><em>empty</em></td><td>HANA database user (e.g. <code>SYSTEM</code> or a monitoring user)</td></tr>
+            <tr><td><strong>Password</strong></td><td><em>empty</em></td><td>HANA database user password</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="box box-orange">
+        <h4>Common port numbers</h4>
+        <ul style="padding-left:20px;line-height:1.9">
+          <li><code>3&lt;NN&gt;13</code> — MDC System DB (NN = instance number, e.g. 30013 for instance 00)</li>
+          <li><code>3&lt;NN&gt;15</code> — First tenant (default MDC tenant port)</li>
+          <li><code>3&lt;NN&gt;41</code>, <code>3&lt;NN&gt;42</code> — Additional tenants</li>
+          <li>Custom ports are visible in <code>SELECT * FROM SYS.M_SERVICES</code> on the HANA system</li>
+        </ul>
+      </div>
+      <p style="margin-top:10px">A green dot in the header confirms a successful connection. The host, port, database, and user are displayed.</p>
+    </div>
+  </div>
+
+  <!-- USAGE GUIDE -->
+  <div class="section" id="usage">
+    <div class="section-hdr"><h2>📖 Usage Guide</h2><span class="badge badge-info">Features</span></div>
+    <div class="section-body">
+
+      <h3 style="color:#162b4a;margin-bottom:8px">SQL Editor</h3>
+      <p>Type or paste any SQL statement into the editor. Press <strong>F5</strong> or click <strong>Execute</strong> to run.</p>
+      <ul style="padding-left:22px;margin-top:8px;line-height:2">
+        <li>Results are shown as a table with column headers</li>
+        <li>Execution time and row count are displayed below the results</li>
+        <li>Default row limit: 500. Set to 0 for unlimited (use carefully on large result sets)</li>
+        <li>A warning banner appears when results are capped at the row limit</li>
+        <li>Click <strong>Export CSV</strong> to save the current result set as a CSV file in the <code>output\</code> folder</li>
+        <li>Statements starting with <code>--</code> (SQL comments) are automatically stripped before execution</li>
+      </ul>
+
+      <h3 style="color:#162b4a;margin:16px 0 8px">Mini-Checks Library</h3>
+      <p>Click the <strong>Scripts</strong> toggle button to open the sidebar. All <code>.txt</code> / <code>.sql</code> files in the <code>mini_checks\</code> folder appear here.</p>
+      <ul style="padding-left:22px;margin-top:8px;line-height:2">
+        <li>Use the filter box to search by script name</li>
+        <li>Click a script to load it into the SQL editor</li>
+        <li>Click <strong>Execute</strong> (or F5) to run it</li>
+        <li>Results can be exported as CSV individually</li>
+      </ul>
+
+      <h3 style="color:#162b4a;margin:16px 0 8px">Basic Bundle (Batch Execution)</h3>
+      <p>The <strong>Basic Bundle</strong> runs all 35+ mini-check scripts in sequence against the connected HANA database and consolidates the results into a single downloadable <code>.txt</code> file.</p>
+      <ol style="padding-left:22px;margin-top:8px;line-height:2">
+        <li>Connect to a HANA database first</li>
+        <li>Click <strong>Run Basic Bundle</strong></li>
+        <li>A progress bar shows script-by-script progress</li>
+        <li>When complete, click the download link to get the consolidated output file</li>
+        <li>The file is named <code>Consolidated_minichecks_basic_bundle_YYYYMMDD.txt</code></li>
+        <li>Scripts that fail (SQL error or missing file) are reported as "skipped" — they do not abort the bundle</li>
+      </ol>
+      <div class="box box-blue">
+        <h4>Basic Bundle output format</h4>
+        The output file contains all results in CSV format, separated by <code>====</code> headers identifying each script. This file can be used directly as input to the <strong>HANA Analysis Report Generator</strong> (hana_analysis_app_v6.01.py).
+      </div>
+
+      <h3 style="color:#162b4a;margin:16px 0 8px">Output Manager</h3>
+      <p>The <strong>Outputs</strong> panel lists all saved files in the <code>output\</code> folder.</p>
+      <ul style="padding-left:22px;margin-top:8px;line-height:2">
+        <li>Click a filename to download it</li>
+        <li>Select multiple files and click <strong>Consolidate</strong> to merge them into one report</li>
+        <li>Click <strong>Clear All</strong> to delete all output files</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- TROUBLESHOOTING -->
+  <div class="section" id="troubleshoot">
+    <div class="section-hdr"><h2>🔍 Troubleshooting</h2><span class="badge badge-info">Help</span></div>
+    <div class="section-body">
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Symptom</th><th>Likely Cause</th><th>Fix</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>ImportError: No module named 'hdbcli'</code></td>
+              <td><code>lib\</code> folder missing or <code>pyhdbcli.pyd</code> not found</td>
+              <td>Ensure <code>lib\</code> is in the same folder as the <code>.py</code> file and contains <code>pyhdbcli.pyd</code></td>
+            </tr>
+            <tr>
+              <td><code>OSError: [WinError 193]</code> on import</td>
+              <td>Python is 32-bit but <code>pyhdbcli.pyd</code> is 64-bit</td>
+              <td>Install the 64-bit Python distribution</td>
+            </tr>
+            <tr>
+              <td><code>OSError: [Errno 98] Address already in use</code></td>
+              <td>Port 5000 is already used by another process</td>
+              <td>Stop the other app, or change the port: edit line 3140: <code>port = 5001</code></td>
+            </tr>
+            <tr>
+              <td>Browser does not open automatically</td>
+              <td><code>webbrowser</code> module cannot find a browser</td>
+              <td>Manually navigate to <code>http://127.0.0.1:5000</code></td>
+            </tr>
+            <tr>
+              <td>Connection error: <em>Cannot connect to host</em></td>
+              <td>Firewall, wrong host/port, or VPN not connected</td>
+              <td>Verify network connectivity: <code>ping &lt;host&gt;</code>; check HANA port with: <code>telnet &lt;host&gt; &lt;port&gt;</code>; connect VPN if needed</td>
+            </tr>
+            <tr>
+              <td>Connection error: <em>authentication failed</em></td>
+              <td>Wrong username or password</td>
+              <td>Verify credentials directly in SAP HANA Cockpit or via HANA Studio</td>
+            </tr>
+            <tr>
+              <td>Scripts sidebar is empty</td>
+              <td><code>mini_checks\</code> folder missing or empty</td>
+              <td>Ensure <code>mini_checks\</code> is in the same directory as the script and contains <code>.txt</code> files</td>
+            </tr>
+            <tr>
+              <td>Basic Bundle finishes with many "skipped"</td>
+              <td>SQL errors on scripts not supported by this HANA version</td>
+              <td>Normal for older HANA versions — scripts with <code>2.00.070+</code> suffix require HANA 2.0 SPS07+. Check the skipped list for details.</td>
+            </tr>
+            <tr>
+              <td>App freezes / stops responding</td>
+              <td>A long-running SQL query is blocking</td>
+              <td>Stop the server (Ctrl+C), restart, and use a more restrictive query or shorter row limit</td>
+            </tr>
+            <tr>
+              <td>Page loads but shows 404 for <code>/static/chart.umd.min.js</code></td>
+              <td><code>lib\chart.umd.min.js</code> missing</td>
+              <td>Charts will not display. Copy the file to <code>lib\</code>. The rest of the app works without it.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  SAP HANA SQL Console — Deployment Guide &nbsp;|&nbsp; hana_tui_web_8.py v8 &nbsp;|&nbsp; RDE LAC &nbsp;|&nbsp; 2026
+</footer>
+
+</body>
+</html>

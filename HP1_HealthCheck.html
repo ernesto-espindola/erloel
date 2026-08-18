@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SAP HANA Health Check Report — HP1</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Segoe UI', Arial, sans-serif; font-size:14px; background:#e8f4fd; color:#222; }
+.header { position:sticky; top:0; z-index:1000; background:linear-gradient(135deg,#003366 0%,#0057a8 60%,#00b4e6 100%); padding:14px 24px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; }
+.header-left { display:flex; align-items:center; gap:16px; }
+.logo-svg { display:block; }
+.header-title { color:#fff; font-size:1.25rem; font-weight:700; }
+.header-meta { color:#d0eaff; font-size:0.78rem; margin-top:3px; display:flex; flex-wrap:wrap; gap:14px; }
+.header-meta span b { color:#fff; }
+.env-badge { background:#e65c00; color:#fff; font-size:0.72rem; font-weight:700; border-radius:12px; padding:5px 14px; text-transform:uppercase; letter-spacing:0.5px; }
+.nav { position:sticky; top:60px; z-index:999; background:#003366; padding:6px 18px; overflow-x:auto; white-space:nowrap; }
+.nav a { display:inline-block; color:#a8d0f0; font-size:0.75rem; border-radius:20px; padding:5px 13px; text-decoration:none; margin-right:4px; transition:all .15s; }
+.nav a:hover, .nav a.active { background:#0057a8; color:#fff; }
+.container { max-width:1400px; margin:0 auto; padding:18px; }
+.kpi-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:14px; margin-bottom:22px; }
+.kpi-card { background:#fff; border-radius:10px; box-shadow:0 2px 6px rgba(0,83,168,.12); padding:16px; cursor:pointer; border-top:4px solid #0057a8; transition:transform .12s, box-shadow .12s; }
+.kpi-card:hover { transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,83,168,.2); }
+.kpi-card.danger { border-top-color:#d9534f; }
+.kpi-card.warn { border-top-color:#f0ad4e; }
+.kpi-card.ok { border-top-color:#5cb85c; }
+.kpi-card.info { border-top-color:#0057a8; }
+.kpi-value { font-size:1.6rem; font-weight:700; color:#003366; }
+.kpi-label { font-size:0.72rem; text-transform:uppercase; color:#888; letter-spacing:0.4px; margin-top:4px; }
+.section { background:#fff; border-radius:10px; box-shadow:0 2px 6px rgba(0,83,168,.10); margin-bottom:16px; overflow:hidden; }
+.section-header { padding:14px 18px; cursor:pointer; display:flex; align-items:center; justify-content:space-between; transition:background .12s; }
+.section-header:hover { background:#f0f7ff; }
+.section-header-left { display:flex; align-items:center; gap:10px; }
+.section-icon { font-size:1.2rem; }
+.section-title { font-size:1rem; font-weight:700; color:#003366; }
+.section-header-right { display:flex; align-items:center; gap:12px; }
+.chevron { transition:transform .2s; color:#0057a8; font-size:0.9rem; }
+.section.open .chevron { transform:rotate(90deg); }
+.section-body { padding:18px; display:none; }
+.section.open .section-body { display:block; }
+.env-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:12px; }
+.env-item { background:#f0f7ff; border-radius:8px; padding:10px 14px; }
+.env-item .lbl { font-size:0.7rem; text-transform:uppercase; color:#888; letter-spacing:0.4px; }
+.env-item .val { font-size:0.95rem; font-weight:600; color:#003366; margin-top:3px; }
+.tbl-wrap { overflow-x:auto; border-radius:8px; margin:10px 0; }
+table { width:100%; border-collapse:collapse; font-size:0.8rem; }
+thead th { background:#003366; color:#fff; padding:9px 12px; font-weight:600; text-align:left; }
+tbody td { padding:7px 12px; border-bottom:1px solid #e8f0f8; }
+tbody tr:nth-child(even) { background:#f0f7ff; }
+tbody tr:hover { background:#d0e8ff; }
+.pill { display:inline-block; padding:2px 9px; border-radius:10px; font-size:0.7rem; font-weight:700; }
+.pill-red { background:#fde8e8; color:#a02020; }
+.pill-orange { background:#fff3cd; color:#856404; }
+.pill-green { background:#d4edda; color:#155724; }
+.pill-blue { background:#cce5ff; color:#004085; }
+.pill-grey { background:#e9ecef; color:#495057; }
+.bar-wrap { display:flex; align-items:center; gap:8px; min-width:110px; }
+.bar-bg { flex:1; background:#e0ecf8; border-radius:4px; height:10px; overflow:hidden; }
+.bar-fill { height:10px; border-radius:4px; background:linear-gradient(90deg,#0057a8,#00b4e6); }
+.bar-fill.warn { background:linear-gradient(90deg,#f0ad4e,#e65c00); }
+.bar-fill.danger { background:linear-gradient(90deg,#d9534f,#a00); }
+.bar-label { font-size:0.72rem; color:#555; min-width:64px; text-align:right; }
+.infobox { border-left:4px solid #0057a8; border-radius:0 8px 8px 0; padding:12px 16px; margin:12px 0; background:#f0f7ff; }
+.infobox.green { border-left-color:#5cb85c; background:#f0fff4; }
+.infobox.orange { border-left-color:#f0ad4e; background:#fffdf0; }
+.infobox.red { border-left-color:#d9534f; background:#fff5f5; }
+.infobox.blue { border-left-color:#0057a8; background:#f0f7ff; }
+.infobox strong { color:#003366; }
+ul.action-list { list-style:none; padding:0; margin:10px 0; }
+ul.action-list li { padding:5px 0 5px 22px; position:relative; border-bottom:1px solid #e8f0f8; font-size:0.85rem; }
+ul.action-list li::before { content:'\25B6'; position:absolute; left:0; color:#0057a8; font-size:0.7rem; top:8px; }
+.term { border-bottom:1px dashed #0057a8; color:#0057a8; cursor:help; }
+#tooltip { position:fixed; background:#003366; color:#fff; padding:10px 14px; border-radius:8px; max-width:280px; z-index:9999; font-size:0.78rem; line-height:1.4; box-shadow:0 4px 16px rgba(0,0,0,.3); display:none; pointer-events:none; }
+.footer { text-align:center; font-size:0.75rem; color:#666; padding:16px; }
+.sub-title { font-size:0.85rem; font-weight:700; color:#003366; margin:16px 0 6px; }
+.chart-svg { background:#fbfdff; border:1px solid #e8f0f8; border-radius:8px; padding:8px; margin:8px 0; }
+.mini-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:14px; }
+.mini-card { background:#f0f7ff; border-radius:8px; padding:14px; }
+.mini-card h4 { color:#003366; font-size:0.85rem; margin-bottom:8px; }
+.stat-row { display:flex; justify-content:space-between; font-size:0.78rem; padding:3px 0; border-bottom:1px dashed #d5e5f5; }
+.notes { font-size:0.72rem; color:#666; }
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="header-left">
+    <svg class="logo-svg" width="86" height="40" viewBox="0 0 86 40" xmlns="http://www.w3.org/2000/svg">
+      <rect x="0" y="4" width="86" height="32" rx="5" fill="rgba(255,255,255,0.12)"/>
+      <text x="10" y="28" font-family="Segoe UI, Arial" font-size="20" font-weight="700" fill="#ffffff">S</text>
+      <text x="24" y="28" font-family="Segoe UI, Arial" font-size="20" font-weight="700" fill="#00b4e6">AP</text>
+      <text x="52" y="26" font-family="Segoe UI, Arial" font-size="10" font-weight="600" fill="#d0eaff">HANA</text>
+    </svg>
+    <div>
+      <div class="header-title">HANA Health Check Report</div>
+      <div class="header-meta">
+        <span>SID <b>HP1</b></span>
+        <span>Host <b>vhmrphp1db01</b></span>
+        <span>Instance <b>02</b></span>
+        <span>Tenant <b>HEP</b></span>
+        <span>Version <b>2.00.087.00</b></span>
+        <span>Type <b>VM</b></span>
+      </div>
+    </div>
+  </div>
+  <div class="env-badge">Production</div>
+</div>
+
+<div class="nav">
+  <a href="#sec0" data-sec="sec0">0 · Environment</a>
+  <a href="#sec1" data-sec="sec1">1 · Version</a>
+  <a href="#sec2" data-sec="sec2">2 · ECS Params</a>
+  <a href="#sec3" data-sec="sec3">3 · P1 Alerts</a>
+  <a href="#sec4" data-sec="sec4">4 · Tech Tables</a>
+  <a href="#sec5" data-sec="sec5">5 · >1.5B Rows</a>
+  <a href="#sec6" data-sec="sec6">6 · OOM Events</a>
+  <a href="#sec7" data-sec="sec7">7 · CPU Spikes</a>
+  <a href="#sec8" data-sec="sec8">8 · Backups</a>
+  <a href="#sec9" data-sec="sec9">9 · Risks</a>
+  <a href="#sec10" data-sec="sec10">10 · Minichecks</a>
+</div>
+
+<div class="container">
+
+  <div class="kpi-grid">
+    <div class="kpi-card danger" data-target="sec2"><div class="kpi-value">3</div><div class="kpi-label">ECS Errors</div></div>
+    <div class="kpi-card danger" data-target="sec3"><div class="kpi-value">47</div><div class="kpi-label">P1 Alerts</div></div>
+    <div class="kpi-card danger" data-target="sec6"><div class="kpi-value">4</div><div class="kpi-label">OOM Events</div></div>
+    <div class="kpi-card warn" data-target="sec4"><div class="kpi-value">34</div><div class="kpi-label">Technical Tables</div></div>
+    <div class="kpi-card warn" data-target="sec7"><div class="kpi-value">1</div><div class="kpi-label">CPU Spikes</div></div>
+    <div class="kpi-card ok" data-target="sec8"><div class="kpi-value">0</div><div class="kpi-label">Failed Backups</div></div>
+    <div class="kpi-card warn" data-target="sec9"><div class="kpi-value">7</div><div class="kpi-label">Plan Cache Low</div></div>
+    <div class="kpi-card warn" data-target="sec1"><div class="kpi-value">WARN</div><div class="kpi-label">Version Status</div></div>
+    <div class="kpi-card warn" data-target="sec6"><div class="kpi-value">73.1%</div><div class="kpi-label">Memory Usage</div></div>
+    <div class="kpi-card info" data-target="sec4"><div class="kpi-value">541 GB</div><div class="kpi-label">Table Size (Disk)</div></div>
+  </div>
+
+  <div class="section open" id="sec0">
+    <div class="section-header">
+      <div class="section-header-left"><span class="section-icon">&#128421;</span><span class="section-title">0 · Environment Summary</span></div>
+      <div class="section-header-right"><span class="pill pill-blue">Production VM</span><span class="chevron">&#9654;</span></div>
+    </div>
+    <div class="section-body">
+      <div class="env-grid">
+        <div class="env-item"><div class="lbl">SID</div><div class="val">HP1</div></div>
+        <div class="env-item"><div class="lbl">Host</div><div class="val">vhmrphp1db01</div></div>
+        <div class="env-item"><div class="lbl">Instance</div><div class="val">02</div></div>
+        <div class="env-item"><div class="lbl">Tenant DB</div><div class="val">HEP</div></div>
+        <div class="env-item"><div class="lbl">Cloud</div><div class="val">SAP DC</div></div>
+        <div class="env-item"><div class="lbl">Host Type</div><div class="val">VM</div></div>
+        <div class="env-item"><div class="lbl">CPU</div><div class="val">64 physical / 128 logical (2 sockets)</div></div>
+        <div class="env-item"><div class="lbl">Physical Memory</div><div class="val">4016 GB</div></div>
+        <div class="env-item"><div class="lbl">Volume Size</div><div class="val">2.1 T</div></div>
+        <div class="env-item"><div class="lbl">HDB Version</div><div class="val">2.00.087.00</div></div>
+        <div class="env-item"><div class="lbl">MDC</div><div class="val">Yes</div></div>
+        <div class="env-item"><div class="lbl">Replication</div><div class="val"><span class="term" data-term="DisasterRecoveryPrimary">Primary</span></div></div>
+        <div class="env-item"><div class="lbl">RowStore Used</div><div class="val">7.52 GB (of 8.52 GB)</div></div>
+        <div class="env-item"><div class="lbl">ColumnStore</div><div class="val">1215.55 GB</div></div>
+        <div class="env-item"><div class="lbl">IndexServer Allocated</div><div class="val">1961.44 GB</div></div>
+        <div class="env-item"><div class="lbl">IndexServer Used</div><div class="val">1434.01 GB (73.1%)</div></div>
+      </div>
+      <div class="infobox blue">
+        <strong>Overview:</strong> HP1 is a single-node production <span class="term" data-term="ECS">ECS</span>-managed HANA VM (tenant HEP) acting as <span class="term" data-term="DisasterRecoveryPrimary">Disaster Recovery Primary</span>. Memory utilization is moderate at 73.1%, but combined with 4 <span class="term" data-term="OOM">OOM</span> events in ~12 days the trend warrants close monitoring. Key attention areas: ECS parameter errors, version currency, and large technical tables (CDPOS).
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="sec1">
+    <div class="section-header">
+      <div class="section-header-left"><span class="section-icon">&#128290;</span><span class="section-title">1 · HANA Database Version</span></div>
+      <div class="section-header-right"><span class="pill pill-orange">WARN</span><span class="chevron">&#9654;</span></div>
+    </div>
+    <div class="section-body">
+      <div class="infobox orange">
+        <strong>Installed:</strong> 2.00.087.00 (<span class="term" data-term="SPS">SPS</span>08 <span class="term" data-term="Revision">Rev</span> 087.00) &nbsp;|&nbsp;
+        <strong>ECS Standard:</strong> 2.00.089.03 (SPS08 Rev 089.03)<br>
+        <strong>Status:</strong> WARN — behind by 2 revisions from the current ECS standard.
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Attribute</th><th>Value</th></tr></thead>
+          <tbody>
+            <tr><td>Installed Version</td><td>2.00.087.00 (SPS08 Rev 087.00)</td></tr>
+            <tr><td>ECS Standard Version</td><td>2.00.089.03 (SPS08 Rev 089.03)</td></tr>
+            <tr><td>Delta</td><td><span class="pill pill-orange">2 revisions behind</span></td></tr>
+            <tr><td>Upgrade Path</td><td><span class="pill pill-green">Supported</span></td></tr>
+            <tr><td>End of Mainstream Maintenance</td><td>20 Nov 2028</td></tr>
+            <tr><td>Active CVE</td><td><span class="pill pill-red">CVE-2026-0492</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="infobox red">
+        <strong>Recommendation:</strong> Upgrade to Rev 089.03 to close the gap with the ECS standard and remediate active CVE-2026-0492. Upgrade path is supported directly within SPS08.
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="sec2">
+    <div class="section-header">
+      <div class="section-header-left"><span class="section-icon">&#9881;</span><span class="section-title">2 · ECS Standard Parameters</span></div>
+      <div class="section-header-right"><span class="pill pill-red">3 ERROR</span><span class="chevron">&#9654;</span></div>
+    </div>
+    <div class="section-body">
+      <div class="infobox red"><strong>Summary:</strong> 3 parameters in ERROR state; multiple additional deviations pass under high/low strictness thresholds (OK) but are worth review.</div>
+      <div class="sub-title">ERROR Parameters</div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>File</th><th>Section</th><th>Parameter</th><th>Expected</th><th>Detected</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td><span class="term" data-term="global.ini">global.ini</span></td><td>communication</td><td><span class="term" data-term="sslminprotocolversion">sslminprotocolversion</span></td><td>EMPTY</td><td>tls12</td><td><span class="pill pill-red">ERROR</span></td></tr>
+            <tr><td><span class="term" data-term="global.ini">global.ini</span></td><td>ldap</td><td><span class="term" data-term="sslminprotocolversion">sslminprotocolversion</span></td><td>EMPTY</td><td>tls12</td><td><span class="pill pill-red">ERROR</span></td></tr>
+            <tr><td><span class="term" data-term="indexserver.ini">indexserver.ini</span></td><td>parallel</td><td><span class="term" data-term="tables_preloaded_in_parallel">tables_preloaded_in_parallel</span></td><td>11</td><td>12</td><td><span class="pill pill-red">ERROR</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="infobox orange">
+        <strong>Interpretation:</strong> <span class="term" data-term="sslminprotocolversion">sslminprotocolversion</span> should be EMPTY (using the system default) per the ECS standard. A hardcoded value of <code>tls12</code> in both the communication and ldap sections indicates a manual override that should be reviewed and removed unless explicitly required. The <span class="term" data-term="tables_preloaded_in_parallel">tables_preloaded_in_parallel</span> value of 12 is a minor deviation from the expected 11.
+      </div>
+      <div class="sub-title">Notable Non-Error Deviations (Strictness High)</div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>File</th><th>Section</th><th>Parameter</th><th>Detected</th></tr></thead>
+          <tbody>
+            <tr><td>global.ini</td><td>persistence</td><td>max_gc_parallelity</td><td>64</td></tr>
+            <tr><td>global.ini</td><td>execution</td><td>default_statement_concurrency_limit</td><td>51</td></tr>
+            <tr><td>global.ini</td><td>memorymanager</td><td>statement_memory_limit</td><td>500</td></tr>
+            <tr><td>global.ini</td><td>memorymanager</td><td>gc_unused_memory_threshold_rel</td><td>25</td></tr>
+            <tr><td>global.ini</td><td>memorymanager</td><td>gc_unused_memory_threshold_abs</td><td>597350 (expected 597504)</td></tr>
+            <tr><td>indexserver.ini</td><td>optimize_compression</td><td>row_order_optimizer_threads</td><td>32</td></tr>
+            <tr><td>indexserver.ini</td><td>password policy</td><td>maximum_password_lifetime</td><td>90</td></tr>
+            <tr><td>indexserver.ini</td><td>password policy</td><td>maximum_unused_productive_password_lifetime</td><td>90</td></tr>
+            <tr><td><span class="term" data-term="nameserver.ini">nameserver.ini</span></td><td>password policy</td><td>maximum_password_lifetime</td><td>90</td></tr>
+            <tr><td>nameserver.ini</td><td>password policy</td><td>maximum_unused_productive_password_lifetime</td><td>90</td></tr>
+            <tr><td>preprocessor.ini</td><td>jobqueue</td><td>num_cores</td><td>51</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="sub-title">Notable Non-Error Deviations (Strictness Low)</div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>File</th><th>Section</th><th>Parameter</th><th>Detected</th></tr></thead>
+          <tbody>
+            <tr><td>global.ini</td><td>expensive_statement</td><td>threshold_duration</td><td>10000000</td></tr>
+            <tr><td>global.ini</td><td>expensive_statement</td><td>maxfiles</td><td>20</td></tr>
+            <tr><td>indexserver.ini</td><td>system_replication</td><td>logshipping_async_buffer_size</td><td>10737418240</td></tr>
+            <tr><td>indexserver.ini</td><td>pitrestart</td><td>replay_step_size</td><td>1073741824</td></tr>
+            <tr><td>indexserver.ini</td><td>system_replication</td><td>logshipping_replay_logbuffer_cache_size</td><td>21474836480</td></tr>
+            <tr><td>indexserver.ini</td><td>system_replication</td><td>logshipping_replay_push_persistent_segment_count</td><td>64</td></tr>
+            <tr><td>indexserver.ini</td><td>password policy</td><td>last_used_passwords</td><td>15</td></tr>
+            <tr><td>indexserver.ini</td><td>password policy</td><td>minimal_password_length</td><td>15</td></tr>
+            <tr><td>indexserver.ini</td><td>transaction</td><td>suspended_cursor_lifetime</td><td>1440</td></tr>
+            <tr><td>nameserver.ini</td><td>password policy</td><td>last_used_passwords</td><td>15</td></tr>
+            <tr><td>nameserver.ini</td><td>password policy</td><td>minimal_password_length</td><td>15</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="sec3">
+    <div class="section-header">
+      <div class="section-header-left"><span class="section-icon">&#128680;</span><span class="section-title">3 · P1 Alerts — Last 40 Days</span></div>
+      <div class="section-header-right"><span class="pill pill-red">47 events</span><span class="chevron">&#9654;</span></div>
+    </div>
+    <div class="section-body">
+      <div class="infobox red"><strong>SYSTEMDB:</strong> 0 events &nbsp;|&nbsp; <strong>HEP:</strong> 47 total events across 3 distinct alerts.</div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Alert ID</th><th>Events</th><th>Description</th><th>Severity</th></tr></thead>
+          <tbody>
+            <tr><td><span class="term" data-term="Alert140">140</span></td><td>40</td><td>The license usage type is not set in a production system</td><td><span class="pill pill-red">P1</span></td></tr>
+            <tr><td><span class="term" data-term="Alert39">39</span></td><td>6</td><td>Long running statements (hash 203f26e3c3018684b236ce8bcae9c2df, running 1969–2661 seconds)</td><td><span class="pill pill-red">P1</span></td></tr>
+            <tr><td><span class="term" data-term="Alert83">83</span></td><td>1</td><td>6 error(s) found (error: 0, high: 0, info: 6) in 6 table(s) by table consistency checker</td><td><span class="pill pill-red">P1</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="sub-title">Recommended Actions</div>
+      <ul class="action-list">
+        <li>Alert 140 (40x): Set the correct license usage type via SAP License Administration for this production system.</li>
+        <li>Alert 39 (6x): Investigate and optimize statement hash 203f26e3c3018684b236ce8bcae9c2df; review via <span class="term" data-term="M_SQL_PLAN_CACHE">M_SQL_PLAN_CACHE</span> and <span class="term" data-term="PlanViz">PlanViz</span>.</li>
+        <li>Alert 83 (1x): Review the 6 informational table-consistency findings; no error/high severity present, so low urgency.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="section" id="sec4">
+    <div class="section-header">
+      <div class="section-header-left"><span class="section-icon">&#128451;</span><span class="section-title">4 · Big Technical Tables</span></div>
+      <div class="section-header-right"><span class="pill pill-orange">34 tables · 541 GB</span><span class="chevron">&#9654;</span></div>
+    </div>
+    <div class="section-body">
+      <div class="infobox orange"><strong>Count:</strong> 34 tables &nbsp;|&nbsp; <strong>Total Memory:</strong> 344.95 GB &nbsp;|&nbsp; <strong>Total Disk:</strong> 541.12 GB. Bar charts scaled to the largest table (CDPOS = 239.32 GB disk).</div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Schema</th><th>Table</th><th>Type</th><th>Records</th><th>Disk (GB)</th><th>Mem (GB)</th><th>LOB</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>SAPABAP1</td><td><span class="term" data-term="CDPOS">CDPOS</span></td><td>C</td><td>4,549,473,781</td><td><div class="bar-wrap"><span class="bar-label">239.32</span><div class="bar-bg"><div class="bar-fill danger" style="width:100%"></div></div></div></td><td>235.11</td><td>—</td><td>Change document items — archive candidates</td></tr>
+            <tr><td>2</td><td>SAPABAP1</td><td><span class="term" data-term="SOFFCONT1">SOFFCONT1</span></td><td>C</td><td>2,755,997</td><td><div class="bar-wrap"><span class="bar-label">60.58</span><div class="bar-bg"><div class="bar-fill warn" style="width:25.3%"></div></div></div></td><td>2.13</td><td>H1</td><td>Office content — NearlineStorage candidate</td></tr>
+            <tr><td>3</td><td>SAPABAP1</td><td><span class="term" data-term="REPOLOAD">REPOLOAD</span></td><td>C</td><td>880,051</td><td><div class="bar-wrap"><span class="bar-label">35.83</span><div class="bar-bg"><div class="bar-fill warn" style="width:15.0%"></div></div></div></td><td>3.92</td><td>H2</td><td>ABAP repository load</td></tr>
+            <tr><td>4</td><td>SAPABAP1</td><td>TST03</td><td>R</td><td>2,906,329</td><td><div class="bar-wrap"><span class="bar-label">32.95</span><div class="bar-bg"><div class="bar-fill warn" style="width:13.8%"></div></div></div></td><td>38.98</td><td>H1</td><td>Test data</td></tr>
+            <tr><td>5</td><td>SAPABAP1</td><td>/AIF/TRFCQDATA</td><td>C</td><td>25,014,634</td><td><div class="bar-wrap"><span class="bar-label">24.89</span><div class="bar-bg"><div class="bar-fill" style="width:10.4%"></div></div></div></td><td>1.08</td><td>—</td><td>AIF queue data</td></tr>
+            <tr><td>6</td><td>SAPABAP1</td><td><span class="term" data-term="DBTABLOG">DBTABLOG</span></td><td>C</td><td>48,762,582</td><td><div class="bar-wrap"><span class="bar-label">23.78</span><div class="bar-bg"><div class="bar-fill" style="width:9.9%"></div></div></div></td><td>7.30</td><td>H1</td><td>DB table logging — archiving recommended</td></tr>
+            <tr><td>7</td><td>SAPABAP1</td><td>/AIF/PERS_XML</td><td>C</td><td>4,997,171</td><td><div class="bar-wrap"><span class="bar-label">17.25</span><div class="bar-bg"><div class="bar-fill" style="width:7.2%"></div></div></div></td><td>0.02</td><td>H1</td><td>AIF persistence XML</td></tr>
+            <tr><td>8</td><td>SAPABAP1</td><td><span class="term" data-term="SWWCNTP0">SWFRCNTXML</span></td><td>C</td><td>25,515,247</td><td><div class="bar-wrap"><span class="bar-label">16.21</span><div class="bar-bg"><div class="bar-fill" style="width:6.8%"></div></div></div></td><td>16.20</td><td>—</td><td>Workflow container XML</td></tr>
+            <tr><td>9</td><td>SAPABAP1</td><td><span class="term" data-term="REPOSRC">REPOSRC</span></td><td>C</td><td>10,692,525</td><td><div class="bar-wrap"><span class="bar-label">12.89</span><div class="bar-bg"><div class="bar-fill" style="width:5.4%"></div></div></div></td><td>2.60</td><td>H1</td><td>ABAP source repository</td></tr>
+            <tr><td>10</td><td>SAPABAP1</td><td><span class="term" data-term="BALDAT">BALDAT</span></td><td>C</td><td>26,674,363</td><td><div class="bar-wrap"><span class="bar-label">11.66</span><div class="bar-bg"><div class="bar-fill" style="width:4.9%"></div></div></div></td><td>11.79</td><td>—</td><td>Application log data — archiving recommended</td></tr>
+            <tr><td>11</td><td>SAPABAP1</td><td>/UIF/LREPDCONTCD</td><td>C</td><td>1,455,477</td><td><div class="bar-wrap"><span class="bar-label">11.54</span><div class="bar-bg"><div class="bar-fill" style="width:4.8%"></div></div></div></td><td>0.38</td><td>H1</td><td>UI repository content</td></tr>
+            <tr><td>12</td><td>SAPABAP1</td><td>T811ED2</td><td>C</td><td>4,510,700</td><td><div class="bar-wrap"><span class="bar-label">7.03</span><div class="bar-bg"><div class="bar-fill" style="width:2.9%"></div></div></div></td><td>0.00</td><td>—</td><td>—</td></tr>
+            <tr><td>13</td><td>SAPABAP1</td><td>SOC3N</td><td>C</td><td>1,228,405</td><td><div class="bar-wrap"><span class="bar-label">5.94</span><div class="bar-bg"><div class="bar-fill" style="width:2.5%"></div></div></div></td><td>0.19</td><td>H4</td><td>—</td></tr>
+            <tr><td>14</td><td>SAPABAP1</td><td>CDHDR</td><td>C</td><td>86,288,064</td><td><div class="bar-wrap"><span class="bar-label">3.64</span><div class="bar-bg"><div class="bar-fill" style="width:1.5%"></div></div></div></td><td>3.68</td><td>—</td><td>Change document headers — archive with CDPOS</td></tr>
+            <tr><td>15</td><td>SAPABAP1</td><td>POC_D_EVTQ</td><td>C</td><td>70,481,691</td><td><div class="bar-wrap"><span class="bar-label">3.40</span><div class="bar-bg"><div class="bar-fill" style="width:1.4%"></div></div></div></td><td>3.43</td><td>—</td><td>—</td></tr>
+            <tr><td>16</td><td>SAPABAP1</td><td>/SDF/SMON_CLUST</td><td>C</td><td>108,334</td><td><div class="bar-wrap"><span class="bar-label">3.28</span><div class="bar-bg"><div class="bar-fill" style="width:1.4%"></div></div></div></td><td>1.12</td><td>H1</td><td>—</td></tr>
+            <tr><td>17</td><td>_SYS_STATISTICS</td><td>HOST_SQL_PLAN_CACHE_BASE</td><td>C</td><td>553,686</td><td><div class="bar-wrap"><span class="bar-label">2.95</span><div class="bar-bg"><div class="bar-fill" style="width:1.2%"></div></div></div></td><td>0.67</td><td>H3</td><td>Statistics server</td></tr>
+            <tr><td>18</td><td>SAPABAP1</td><td><span class="term" data-term="SWWCNTP0">SWWCNTP0</span></td><td>C</td><td>4,105,292</td><td><div class="bar-wrap"><span class="bar-label">2.38</span><div class="bar-bg"><div class="bar-fill" style="width:1.0%"></div></div></div></td><td>2.38</td><td>—</td><td>Workflow container persistence</td></tr>
+            <tr><td>19</td><td>SAPABAP1</td><td>CDPOS_UID</td><td>C</td><td>50,663,619</td><td><div class="bar-wrap"><span class="bar-label">2.30</span><div class="bar-bg"><div class="bar-fill" style="width:1.0%"></div></div></div></td><td>2.30</td><td>—</td><td>—</td></tr>
+            <tr><td>20</td><td>_SYS_REPO</td><td><span class="term" data-term="OBJECT_HISTORY">OBJECT_HISTORY</span></td><td>C</td><td>154,073</td><td><div class="bar-wrap"><span class="bar-label">2.21</span><div class="bar-bg"><div class="bar-fill" style="width:0.9%"></div></div></div></td><td>0.00</td><td>H2</td><td>Repo object history</td></tr>
+            <tr><td>21</td><td>SAPABAP1</td><td>SCR_ABAP_AST</td><td>C</td><td>31,398</td><td><div class="bar-wrap"><span class="bar-label">2.16</span><div class="bar-bg"><div class="bar-fill" style="width:0.9%"></div></div></div></td><td>0.00</td><td>H1</td><td>—</td></tr>
+            <tr><td>22</td><td>SAPABAP1</td><td>/AIF/TRFCQSTATE</td><td>C</td><td>12,311,401</td><td><div class="bar-wrap"><span class="bar-label">1.96</span><div class="bar-bg"><div class="bar-fill" style="width:0.8%"></div></div></div></td><td>0.64</td><td>—</td><td>—</td></tr>
+            <tr><td>23</td><td>SAPABAP1</td><td>SCR_ABAP_SYMB</td><td>C</td><td>22,012</td><td><div class="bar-wrap"><span class="bar-label">1.75</span><div class="bar-bg"><div class="bar-fill" style="width:0.7%"></div></div></div></td><td>0.00</td><td>H1</td><td>—</td></tr>
+            <tr><td>24</td><td>SAPABAP1</td><td>APQD</td><td>R</td><td>2,834,966</td><td><div class="bar-wrap"><span class="bar-label">1.70</span><div class="bar-bg"><div class="bar-fill" style="width:0.7%"></div></div></div></td><td>0.62</td><td>H1</td><td>Async processing queue</td></tr>
+            <tr><td>25</td><td>SAPABAP1</td><td>SCR_ABAP_SCAN</td><td>C</td><td>22,012</td><td><div class="bar-wrap"><span class="bar-label">1.64</span><div class="bar-bg"><div class="bar-fill" style="width:0.7%"></div></div></div></td><td>0.00</td><td>H1</td><td>—</td></tr>
+            <tr><td>26</td><td>SAPABAP1</td><td><span class="term" data-term="D010TAB">D010TAB</span></td><td>C</td><td>147,797,490</td><td><div class="bar-wrap"><span class="bar-label">1.51</span><div class="bar-bg"><div class="bar-fill" style="width:0.6%"></div></div></div></td><td>1.53</td><td>—</td><td>ABAP dictionary</td></tr>
+            <tr><td>27</td><td>SAPABAP1</td><td>WBCROSSGT</td><td>C</td><td>31,456,892</td><td><div class="bar-wrap"><span class="bar-label">1.43</span><div class="bar-bg"><div class="bar-fill" style="width:0.6%"></div></div></div></td><td>1.45</td><td>—</td><td>—</td></tr>
+            <tr><td>28</td><td>SAPABAP1</td><td>SWNCMONI</td><td>R</td><td>454,187</td><td><div class="bar-wrap"><span class="bar-label">1.38</span><div class="bar-bg"><div class="bar-fill" style="width:0.6%"></div></div></div></td><td>1.30</td><td>—</td><td>—</td></tr>
+            <tr><td>29</td><td>SAPABAP1</td><td>TRFCQDATA</td><td>R</td><td>698,624</td><td><div class="bar-wrap"><span class="bar-label">1.34</span><div class="bar-bg"><div class="bar-fill" style="width:0.6%"></div></div></div></td><td>1.24</td><td>—</td><td>tRFC queue data</td></tr>
+            <tr><td>30</td><td>SAPABAP1</td><td>SWWLOGHIST</td><td>C</td><td>14,870,182</td><td><div class="bar-wrap"><span class="bar-label">1.30</span><div class="bar-bg"><div class="bar-fill" style="width:0.5%"></div></div></div></td><td>1.31</td><td>—</td><td>—</td></tr>
+            <tr><td>31</td><td>SAPABAP1</td><td><span class="term" data-term="EDID4">EDID4</span></td><td>C</td><td>11,360,554</td><td><div class="bar-wrap"><span class="bar-label">1.30</span><div class="bar-bg"><div class="bar-fill" style="width:0.5%"></div></div></div></td><td>0.04</td><td>—</td><td>IDoc data — archiving recommended</td></tr>
+            <tr><td>32</td><td>SAPABAP1</td><td>BDCP2</td><td>C</td><td>35,180,696</td><td><div class="bar-wrap"><span class="bar-label">1.15</span><div class="bar-bg"><div class="bar-fill" style="width:0.5%"></div></div></div></td><td>1.17</td><td>—</td><td>—</td></tr>
+            <tr><td>33</td><td>SAPABAP1</td><td>POC_D_EVTQ_PREBO</td><td>C</td><td>26,070,172</td><td><div class="bar-wrap"><span class="bar-label">1.15</span><div class="bar-bg"><div class="bar-fill" style="width:0.5%"></div></div></div></td><td>1.17</td><td>—</td><td>—</td></tr>
+            <tr><td>34</td><td>SAPABAP1</td><td>POWL_RESULT</td><td>R</td><td>375,525</td><td><div class="bar-wrap"><span class="bar-label">1.14</span><div class="bar-bg"><div class="bar-fill" style="width:0.5%"></div></div></div></td><td>1.06</td><td>—</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="infobox blue"><strong>Note:</strong> <span class="term" data-term="TechnicalTable">Technical tables</span> such as CDPOS, DBTABLOG, BALDAT and EDID4 are strong archiving candidates. LOB-heavy tables (SOFFCONT1, REPOLOAD, TST03) are candidates for <span class="term" data-term="NearlineStorage">NearlineStorage</span>.</div>
+    </div>
+  </div>
+
+  <div class="section" id="sec5">
+    <div class="section-header">
+      <div class="section-header-left"><span class="section-icon">&#128202;</span><span class="section-title">5 · Tables &gt; 1.5 Billion Records</span></div>
+      <div class="section-header-right"><span class="pill pill-green">None found</span><span class="chevron">&#9654;</span></div>
+    </div>
+    <div class="section-body">
+      <div class="infobox green"><strong>SYSTEMDB:</strong> 0 &nbsp;|&nbsp; <strong>HEP:</strong> 0 tables exceeded the 1.5 billion record threshold in the dedicated check.</div>
+      <div class="infobox orange"><strong>Note:</strong> <span class="term" data-term="CDPOS">CDPOS</span> holds ~4.55 billion records but was NOT surfaced by this dedicated &gt;1.5B check — it is already captured under the Big Technical Tables check (Section 4). It remains the top archiving priority regardless of this check's green status.</div>
+    </div>
+  </div>
+
+  <div class="section" id="sec6">
+    <div class="section-header">
+      <div class="section-header-left"><span class="section-icon">&#128190;</span><span class="section-title">6 · Out-of-Memory Events</span></div>
+      <div class="section-header-right"><span class="pill pill-red">4 events</span><span class="chevron">&#9654;</span></div>
+    </div>
+    <div class="section-body">
+      <div class="infobox red"><strong>SYSTEMDB:</strong> 0 &nbsp;|&nbsp; <strong>HEP:</strong> 4 <span class="term" data-term="OOM">OOM</span> events in ~12 days (Jun 26 – Jul 8) — a recurring pattern.</div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Timestamp</th><th>Type</th></tr></thead>
+          <tbody>
+            <tr><td>2026-07-08 09:56:35</td><td><span class="term" data-term="compositelimit_oom">compositelimit_oom</span></td></tr>
+            <tr><td>2026-07-06 09:34:06</td><td><span class="term" data-term="compositelimit_oom">compositelimit_oom</span></td></tr>
+            <tr><td>2026-06-30 14:09:45</td><td><span class="term" data-term="compositelimit_oom">compositelimit_oom</span></td></tr>
+            <tr><td>2026-06-26 12:58:30</td><td><span class="term" data-term="compositelimit_oom">compositelimit_oom</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="sub-title">Memory Utilization</div>
+      <div class="env-grid">
+        <div class="env-item"><div class="lbl">Allocated</div><div class="val">1961.44 GB</div></div>
+        <div class="env-item"><div class="lbl">Used</div><div class="val">1434.01 GB</div></div>
+        <div class="env-item"><div class="lbl">Utilization</div><div class="val">73.1%</div></div>
+      </div>
+      <div class="bar-wrap" style="margin:10px 0;"><span class="bar-label">73.1%</span><div class="bar-bg"><div class="bar-fill warn" style="width:73.1%"></div></div></div>
+      <div class="sub-title">Top 10 HEP Allocators (via <span class="term" data-term="M_DEV_MEMORY_COMPONENT_ALLOCATORS">M_DEV_MEMORY_COMPONENT_ALLOCATORS</span>)</div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Allocator</th><th>Size (GB)</th><th>% of Alloc</th><th></th></tr></thead>
+          <tbody>
+            <tr><td>Pool/ColumnStore/Main/Compressed/Indirect</td><td>370.30</td><td>18.89%</td><td><div class="bar-bg"><div class="bar-fill" style="width:100%"></div></div></td></tr>
+            <tr><td>Pool/ColumnStore/Main/Dictionary/RoDict</td><td>279.89</td><td>14.28%</td><td><div class="bar-bg"><div class="bar-fill" style="width:75.6%"></div></div></td></tr>
+            <tr><td>Pool/ColumnStore/Main/Rowid</td><td>90.10</td><td>4.60%</td><td><div class="bar-bg"><div class="bar-fill" style="width:24.3%"></div></div></td></tr>
+            <tr><td>Pool/ColumnStore/Main/Index/PageableSingle</td><td>81.95</td><td>4.18%</td><td><div class="bar-bg"><div class="bar-fill" style="width:22.1%"></div></div></td></tr>
+            <tr><td>Pool/ColumnStore/Main/Uncompressed</td><td>79.14</td><td>4.04%</td><td><div class="bar-bg"><div class="bar-fill" style="width:21.4%"></div></div></td></tr>
+            <tr><td>Pool/ColumnStore/Main/Compressed/Rle</td><td>76.90</td><td>3.92%</td><td><div class="bar-bg"><div class="bar-fill" style="width:20.8%"></div></div></td></tr>
+            <tr><td>Pool/ColumnStore/Main/Index/Single</td><td>71.86</td><td>3.67%</td><td><div class="bar-bg"><div class="bar-fill" style="width:19.4%"></div></div></td></tr>
+            <tr><td>Pool/CS/BufferPage</td><td>60.38</td><td>3.08%</td><td><div class="bar-bg"><div class="bar-fill" style="width:16.3%"></div></div></td></tr>
+            <tr><td>Pool/PersistenceManager/PersistentSpace/LOBPage</td><td>56.31</td><td>2.87%</td><td><div class="bar-bg"><div class="bar-fill" style="width:15.2%"></div></div></td></tr>
+            <tr><td>Pool/PersistenceManager/PersistentSpace/DefaultPageProvider:DataPage</td><td>24.39</td><td>1.24%</td><td><div class="bar-bg"><div class="bar-fill" style="width:6.6%"></div></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="sub-title">Recommendations</div>
+      <ul class="action-list">
+        <li>Analyze OOM trace files for the 4 <span class="term" data-term="compositelimit_oom">compositelimit_oom</span> events via <span class="term" data-term="M_OUT_OF_MEMORY_EVENTS">M_OUT_OF_MEMORY_EVENTS</span>.</li>
+        <li>Column Store Main dominates memory (top allocators). Archiving CDPOS/DBTABLOG will directly reduce Column Store footprint.</li>
+        <li>Consider tuning <span class="term" data-term="StatementTimeout">statement memory limits</span> and evaluate <span class="term" data-term="WorkloadClass">Workload Classes</span> / <span class="term" data-term="AdmissionControl">Admission Control</span> to prevent recurrence.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="section" id="sec7">
+    <div class="section-header">
+      <div class="section-header-left"><span class="section-icon">&#9889;</span><span class="section-title">7 · CPU Spikes &ge; 95%</span></div>
+      <div class="section-header-right"><span class="pill pill-orange">1 spike</span><span class="chevron">&#9654;</span></div>
+    </div>
+    <div class="section-body">
+      <div class="infobox orange"><strong>Count:</strong> 1 spike (&ge;95% threshold, last 40 days). <strong>Average CPU:</strong> 1.09% — a very low baseline, indicating an isolated spike rather than chronic pressure.</div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Timestamp</th><th>CPU %</th><th></th></tr></thead>
+          <tbody>
+            <tr><td>2026-06-17 15:55:03</td><td>96%</td><td><div class="bar-bg"><div class="bar-fill danger" style="width:96%"></div></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="infobox green"><strong>Assessment:</strong> With an average CPU of only 1.09%, this single 96% spike is isolated and not indicative of a chronic CPU problem. No action required beyond routine monitoring.</div>
+    </div>
+  </div>
+
+  <div class="section" id="sec8">
+    <div class="section-header">
+      <div class="section-header-left"><span class="section-icon">&#128191;</span><span class="section-title">8 · Failed Backups</span></div>
+      <div class="section-header-right"><span class="pill pill-green">0 failures</span><span class="chevron">&#9654;</span></div>
+    </div>
+    <div class="section-body">
+      <div class="infobox green"><strong>No failed backups</strong> detected in the reporting window (Failed = 0, Long-Running = 0). Backup health is nominal per <span class="term" data-term="M_BACKUP_CATALOG">M_BACKUP_CATALOG</span>. Continue monitoring via <span class="term" data-term="Backint">Backint</span> integration.</div>
+    </div>
+  </div>
+
+  <div class="section" id="sec9">
+    <div class="section-header">
+      <div class="section-header-left"><span class="section-icon">&#9888;</span><span class="section-title">9 · Additional Risks</span></div>
+      <div class="section-header-right"><span class="pill pill-red">4 HIGH</span><span class="chevron">&#9654;</span></div>
+    </div>
+    <div class="section-body">
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Risk Area</th><th>Observation</th><th>Severity</th><th>Action</th></tr></thead>
+          <tbody>
+            <tr><td><span class="term" data-term="PlanCacheHitRatio">Plan Cache Hit Ratio</span></td><td>7 low-ratio events on 2026-07-05, lowest 68.6%</td><td><span class="pill pill-orange">MEDIUM</span></td><td>Investigate statements executed on Jul 5; consider increasing plan cache size</td></tr>
+            <tr><td>License Type</td><td>Alert 140 fired 40 times — license usage type not configured for production</td><td><span class="pill pill-red">HIGH</span></td><td>Set correct license usage type via SAP License Admin</td></tr>
+            <tr><td><span class="term" data-term="TLSProtocol">TLS Configuration</span></td><td>sslminprotocolversion set to tls12 in communication and ldap sections — deviates from ECS standard</td><td><span class="pill pill-orange">MEDIUM</span></td><td>Review and align with ECS standard; remove manual override if not required</td></tr>
+            <tr><td>OOM Pattern</td><td>4 compositelimit OOM events in ~12 days (Jun 26 – Jul 8) — recurring pattern</td><td><span class="pill pill-red">HIGH</span></td><td>Analyze OOM traces; consider memory limit tuning or workload optimization</td></tr>
+            <tr><td>Long Running Statements</td><td>Alert 39 fired 6 times for same statement hash 203f26e3... (up to 2661s)</td><td><span class="pill pill-red">HIGH</span></td><td>Investigate and optimize statement hash 203f26e3c3018684b236ce8bcae9c2df</td></tr>
+            <tr><td>Table Size — CDPOS</td><td>CDPOS at 239 GB disk, 4.55B records — largest table by far</td><td><span class="pill pill-red">HIGH</span></td><td>Initiate archiving project using SAP archiving objects (FI_DOCUMNT for CDPOS)</td></tr>
+            <tr><td>LOB Storage</td><td>SOFFCONT1 (60.58 GB LOB), REPOLOAD (35.64 GB LOB), DBTABLOG (16.91 GB LOB) — significant LOB footprint</td><td><span class="pill pill-orange">MEDIUM</span></td><td>Consider NearlineStorage for SOFFCONT1; review LOB retention policies</td></tr>
+            <tr><td>tables_preloaded_in_parallel</td><td>Set to 12, ECS expects 11 — minor deviation but flagged as ERROR</td><td><span class="pill pill-grey">LOW</span></td><td>Align to ECS standard value of 11</td></tr>
+            <tr><td>Replication Role</td><td>System is configured as Disaster Recovery Primary</td><td><span class="pill pill-blue">INFO</span></td><td>Ensure secondary site is healthy and replication lag is monitored</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="sec10">
+    <div class="section-header">
+      <div class="section-header-left"><span class="section-icon">&#128300;</span><span class="section-title">10 · Minichecks</span></div>
+      <div class="section-header-right"><span class="pill pill-orange">Review</span><span class="chevron">&#9654;</span></div>
+    </div>
+    <div class="section-body">
+      <div class="mini-grid">
+
+        <div class="mini-card">
+          <h4>HANA_Resources_CPUAndMemory</h4>
+          <div class="stat-row"><span>CPU Average</span><span>1.09% (healthy)</span></div>
+          <div class="stat-row"><span>CPU Spikes</span><span>1 &rarr; 96% on 2026-06-17</span></div>
+          <div class="stat-row"><span>Memory Used</span><span>1434 / 1961 GB (73.1%)</span></div>
+          <svg class="chart-svg" width="100%" height="90" viewBox="0 0 300 90" preserveAspectRatio="none">
+            <text x="4" y="16" font-size="9" fill="#003366">Allocated 1961 GB</text>
+            <rect x="4" y="20" width="292" height="14" rx="3" fill="#e0ecf8"/>
+            <rect x="4" y="20" width="292" height="14" rx="3" fill="#0057a8" opacity="0.35"/>
+            <text x="4" y="52" font-size="9" fill="#003366">Used 1434 GB (73.1%)</text>
+            <rect x="4" y="56" width="292" height="14" rx="3" fill="#e0ecf8"/>
+            <rect x="4" y="56" width="213" height="14" rx="3" fill="#f0ad4e"/>
+          </svg>
+          <div class="notes"><strong>Action:</strong> Monitor memory trend given 4 OOM events; investigate OOM trace files via <span class="term" data-term="M_OUT_OF_MEMORY_EVENTS">M_OUT_OF_MEMORY_EVENTS</span>.</div>
+        </div>
+
+        <div class="mini-card">
+          <h4>HANA_SQL_ExpensiveStatements</h4>
+          <div class="stat-row"><span>Long-running hash</span><span>203f26e3... (1969–2661s)</span></div>
+          <div class="stat-row"><span>Plan cache low events</span><span>7 on 2026-07-05</span></div>
+          <div class="stat-row"><span>Lowest hit ratio</span><span>68.6% (critical)</span></div>
+          <svg class="chart-svg" width="100%" height="90" viewBox="0 0 300 90">
+            <line x1="30" y1="6" x2="30" y2="72" stroke="#ccc" stroke-width="1"/>
+            <line x1="30" y1="72" x2="296" y2="72" stroke="#ccc" stroke-width="1"/>
+            <text x="2" y="20" font-size="8" fill="#888">1.0</text>
+            <text x="2" y="72" font-size="8" fill="#888">0.6</text>
+            <polyline points="40,54 78,20 116,15 154,14 192,13 230,12 268,10" fill="none" stroke="#d9534f" stroke-width="2"/>
+            <circle cx="40" cy="54" r="3" fill="#d9534f"/>
+            <circle cx="78" cy="20" r="2.5" fill="#0057a8"/>
+            <circle cx="116" cy="15" r="2.5" fill="#0057a8"/>
+            <circle cx="154" cy="14" r="2.5" fill="#0057a8"/>
+            <circle cx="192" cy="13" r="2.5" fill="#0057a8"/>
+            <circle cx="230" cy="12" r="2.5" fill="#0057a8"/>
+            <circle cx="268" cy="10" r="2.5" fill="#0057a8"/>
+            <text x="40" y="86" font-size="8" fill="#888">.686</text>
+            <text x="250" y="86" font-size="8" fill="#888">.899</text>
+          </svg>
+          <div class="notes"><strong>Action:</strong> Run HANA_SQL_ExpensiveStatements; optimize the long-running statement (<span class="term" data-term="PlanViz">PlanViz</span>); increase plan cache if needed.</div>
+        </div>
+
+        <div class="mini-card">
+          <h4>HANA_Tables_LargestTables (Top 10 by Disk)</h4>
+          <svg class="chart-svg" width="100%" height="200" viewBox="0 0 300 200">
+            <text x="2" y="14" font-size="9" fill="#003366">CDPOS</text><rect x="2" y="16" width="296" height="10" fill="#e0ecf8"/><rect x="2" y="16" width="296" height="10" fill="#d9534f"/><text x="270" y="24" font-size="8" fill="#333">239</text>
+            <text x="2" y="34" font-size="9" fill="#003366">SOFFCONT1</text><rect x="2" y="36" width="296" height="10" fill="#e0ecf8"/><rect x="2" y="36" width="75" height="10" fill="#0057a8"/><text x="80" y="44" font-size="8" fill="#333">60.6</text>
+            <text x="2" y="54" font-size="9" fill="#003366">REPOLOAD</text><rect x="2" y="56" width="296" height="10" fill="#e0ecf8"/><rect x="2" y="56" width="44" height="10" fill="#0057a8"/><text x="49" y="64" font-size="8" fill="#333">35.8</text>
+            <text x="2" y="74" font-size="9" fill="#003366">TST03</text><rect x="2" y="76" width="296" height="10" fill="#e0ecf8"/><rect x="2" y="76" width="41" height="10" fill="#0057a8"/><text x="46" y="84" font-size="8" fill="#333">33.0</text>
+            <text x="2" y="94" font-size="9" fill="#003366">/AIF/TRFCQDATA</text><rect x="2" y="96" width="296" height="10" fill="#e0ecf8"/><rect x="2" y="96" width="31" height="10" fill="#00b4e6"/><text x="36" y="104" font-size="8" fill="#333">24.9</text>
+            <text x="2" y="114" font-size="9" fill="#003366">DBTABLOG</text><rect x="2" y="116" width="296" height="10" fill="#e0ecf8"/><rect x="2" y="116" width="29" height="10" fill="#00b4e6"/><text x="34" y="124" font-size="8" fill="#333">23.8</text>
+            <text x="2" y="134" font-size="9" fill="#003366">/AIF/PERS_XML</text><rect x="2" y="136" width="296" height="10" fill="#e0ecf8"/><rect x="2" y="136" width="21" height="10" fill="#00b4e6"/><text x="26" y="144" font-size="8" fill="#333">17.3</text>
+            <text x="2" y="154" font-size="9" fill="#003366">SWFRCNTXML</text><rect x="2" y="156" width="296" height="10" fill="#e0ecf8"/><rect x="2" y="156" width="20" height="10" fill="#00b4e6"/><text x="25" y="164" font-size="8" fill="#333">16.2</text>
+            <text x="2" y="174" font-size="9" fill="#003366">REPOSRC</text><rect x="2" y="176" width="296" height="10" fill="#e0ecf8"/><rect x="2" y="176" width="16" height="10" fill="#00b4e6"/><text x="21" y="184" font-size="8" fill="#333">12.9</text>
+            <text x="2" y="194" font-size="9" fill="#003366">BALDAT</text><rect x="2" y="196" width="296" height="4" fill="#e0ecf8"/><rect x="2" y="196" width="14" height="4" fill="#00b4e6"/>
+          </svg>
+          <div class="notes"><strong>Total footprint:</strong> 541 GB disk. <strong>Action:</strong> Archive CDPOS, DBTABLOG, BALDAT, EDID4.</div>
+        </div>
+
+        <div class="mini-card">
+          <h4>HANA_Configuration_Overview</h4>
+          <div class="stat-row"><span>ERROR parameters</span><span>3</span></div>
+          <div class="stat-row"><span>Strictness-high deviations</span><span>11</span></div>
+          <div class="stat-row"><span>Strictness-low deviations</span><span>11</span></div>
+          <svg class="chart-svg" width="100%" height="60" viewBox="0 0 300 60">
+            <rect x="4" y="20" width="60" height="24" rx="4" fill="#d9534f"/><text x="34" y="36" font-size="10" fill="#fff" text-anchor="middle">3 ERR</text>
+            <rect x="72" y="20" width="90" height="24" rx="4" fill="#f0ad4e"/><text x="117" y="36" font-size="10" fill="#fff" text-anchor="middle">11 HIGH</text>
+            <rect x="170" y="20" width="90" height="24" rx="4" fill="#0057a8"/><text x="215" y="36" font-size="10" fill="#fff" text-anchor="middle">11 LOW</text>
+          </svg>
+          <div class="notes"><strong>Action:</strong> Fix ERROR parameters; review strictness deviations during next maintenance window.</div>
+        </div>
+
+        <div class="mini-card">
+          <h4>HANA_Disks_Data_Partitions</h4>
+          <div class="stat-row"><span>Volume Total</span><span>2.1 TB</span></div>
+          <div class="stat-row"><span>ColumnStore</span><span>1215.55 GB</span></div>
+          <div class="stat-row"><span>Tech-table disk</span><span>541.12 GB</span></div>
+          <div class="stat-row"><span>RowStore</span><span>7.52 / 8.52 GB used</span></div>
+          <svg class="chart-svg" width="100%" height="70" viewBox="0 0 300 70">
+            <text x="4" y="14" font-size="9" fill="#003366">Volume 2.1 TB (2150 GB)</text>
+            <rect x="4" y="20" width="292" height="18" rx="3" fill="#e0ecf8"/>
+            <rect x="4" y="20" width="165" height="18" fill="#0057a8"/>
+            <rect x="169" y="20" width="1.2" height="18" fill="#5cb85c"/>
+            <text x="4" y="56" font-size="8" fill="#0057a8">&#9632; ColumnStore 1215 GB</text>
+            <text x="150" y="56" font-size="8" fill="#5cb85c">&#9632; RowStore 8.5 GB</text>
+          </svg>
+          <div class="notes"><strong>Action:</strong> Monitor disk usage trend; CDPOS archiving will reclaim ~239 GB.</div>
+        </div>
+
+        <div class="mini-card">
+          <h4>HANA_IO_DiskDetails</h4>
+          <div class="stat-row"><span>LOB pages in memory</span><span>56.31 GB</span></div>
+          <div class="stat-row"><span>Data pages in memory</span><span>24.39 GB</span></div>
+          <div class="stat-row"><span>LOB-heavy tables</span><span>SOFFCONT1, REPOLOAD, DBTABLOG, TST03</span></div>
+          <svg class="chart-svg" width="100%" height="70" viewBox="0 0 300 70">
+            <text x="4" y="16" font-size="9" fill="#003366">LOBPage 56.31 GB</text>
+            <rect x="4" y="20" width="292" height="12" rx="3" fill="#e0ecf8"/><rect x="4" y="20" width="292" height="12" rx="3" fill="#f0ad4e"/>
+            <text x="4" y="48" font-size="9" fill="#003366">DataPage 24.39 GB</text>
+            <rect x="4" y="52" width="292" height="12" rx="3" fill="#e0ecf8"/><rect x="4" y="52" width="126" height="12" rx="3" fill="#0057a8"/>
+          </svg>
+          <div class="notes"><strong>Action:</strong> Implement <span class="term" data-term="NearlineStorage">NearlineStorage</span> for LOB-heavy tables; review LOB GC interval.</div>
+        </div>
+
+        <div class="mini-card">
+          <h4>HANA_IO_Savepoints</h4>
+          <div class="stat-row"><span>Explicit savepoint data</span><span>Not in output</span></div>
+          <div class="stat-row"><span>OOM events</span><span>4 (can interrupt savepoints)</span></div>
+          <div class="stat-row"><span>preload deviation</span><span>12 vs 11 (affects restart)</span></div>
+          <div class="notes"><strong>Action:</strong> Monitor savepoint duration via M_SAVEPOINTS; validate no savepoint blocking after OOM events. Align <span class="term" data-term="tables_preloaded_in_parallel">tables_preloaded_in_parallel</span> to 11.</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">Health Check Report | SID: HP1 | Generated: 2026-07-21 | Script: v1.00</div>
+</div>
+
+<div id="tooltip"></div>
+
+<script>
+var GLOSSARY = {
+  "SPS":"Support Package Stack — a major release bundle for SAP HANA.",
+  "Revision":"Minor patch release within an SPS.",
+  "PatchLevel":"Sub-revision fix level.",
+  "ECS":"Enterprise Cloud Services — SAP's internal cloud operations standard.",
+  "global.ini":"Primary HANA system-wide configuration file.",
+  "indexserver.ini":"Configuration file for the HANA index server service.",
+  "nameserver.ini":"Configuration file for the HANA name server service.",
+  "sslminprotocolversion":"Minimum TLS protocol version for encrypted connections.",
+  "Alert29":"HANA alert for high memory usage.",
+  "Alert39":"HANA alert for long-running statements (threshold configurable).",
+  "Alert83":"HANA alert from table consistency checker findings.",
+  "Alert140":"HANA alert when license usage type is not set in production system.",
+  "Mergedog":"HANA background service managing delta merge operations.",
+  "PlanViz":"HANA plan visualizer tool for SQL query plan analysis.",
+  "AdmissionControl":"HANA feature to throttle workloads under memory pressure.",
+  "TechnicalTable":"SAP application table with large footprint requiring monitoring.",
+  "NearlineStorage":"Tiered storage solution to offload cold LOB/archive data from HANA.",
+  "OOM":"Out of Memory — event when HANA exceeds its memory allocation limit.",
+  "M_DEV_MEMORY_COMPONENT_ALLOCATORS":"System view showing memory allocation by component.",
+  "M_LOAD_HISTORY_SERVICE":"System view with historical service-level load metrics.",
+  "WorkloadClass":"HANA feature to classify and prioritize workloads.",
+  "StatementTimeout":"Parameter to kill statements exceeding a time threshold.",
+  "Backint":"SAP backup interface standard for third-party backup tools.",
+  "PlanCacheHitRatio":"Ratio of SQL plan reuse; low values indicate excessive recompilation.",
+  "PlanStability":"Feature to lock SQL execution plans to prevent regression.",
+  "DisasterRecoveryPrimary":"System replication role — this system is the source of truth.",
+  "TLSProtocol":"Transport Layer Security — encryption protocol for network communication.",
+  "DeltaMerge":"HANA operation merging delta store changes into main column store.",
+  "SOFFCONT1":"SAP Office content storage table — often large due to attachments.",
+  "REPOLOAD":"ABAP Repository load table — stores compiled ABAP objects.",
+  "RSAU_LOG":"Security audit log table.",
+  "REPOSRC":"ABAP Repository source code table.",
+  "EDID4":"IDoc data table — stores intermediate document payloads.",
+  "OBJECT_HISTORY":"_SYS_REPO table tracking historical HANA repository object versions.",
+  "DBTABLOG":"Database table change log — records all changes when logging is active.",
+  "SWWCNTP0":"SAP Workflow container persistence table.",
+  "CDPOS":"Change document items table — one of the largest SAP tables.",
+  "BALDAT":"Application log data table — stores SAP application log messages.",
+  "D010TAB":"ABAP dictionary table usage table.",
+  "M_BACKUP_CATALOG":"System view for backup history and status.",
+  "M_SQL_PLAN_CACHE":"System view containing cached SQL execution plans.",
+  "M_SERVICE_REPLICATION":"System view for system replication status.",
+  "M_OUT_OF_MEMORY_EVENTS":"System view listing OOM event details.",
+  "M_BLOCKED_TRANSACTIONS":"System view showing currently blocked transactions.",
+  "compositelimit_oom":"OOM type where the composite memory limit (global allocation limit) is exceeded.",
+  "tables_preloaded_in_parallel":"Number of tables loaded in parallel during HANA startup."
+};
+
+document.querySelectorAll('.section-header').forEach(function(h){
+  h.addEventListener('click', function(){
+    h.parentElement.classList.toggle('open');
+  });
+});
+
+document.querySelectorAll('.kpi-card').forEach(function(c){
+  c.addEventListener('click', function(){
+    var t = document.getElementById(c.getAttribute('data-target'));
+    if(t){ t.classList.add('open'); t.scrollIntoView({behavior:'smooth', block:'start'}); }
+  });
+});
+
+document.querySelectorAll('.nav a').forEach(function(a){
+  a.addEventListener('click', function(e){
+    e.preventDefault();
+    var id = a.getAttribute('href').substring(1);
+    var t = document.getElementById(id);
+    if(t){ t.classList.add('open'); t.scrollIntoView({behavior:'smooth', block:'start'}); }
+    document.querySelectorAll('.nav a').forEach(function(x){ x.classList.remove('active'); });
+    a.classList.add('active');
+  });
+});
+
+var tip = document.getElementById('tooltip');
+document.querySelectorAll('.term').forEach(function(t){
+  t.addEventListener('mouseenter', function(){
+    var key = t.getAttribute('data-term');
+    var def = GLOSSARY[key];
+    if(def){ tip.textContent = def; tip.style.display = 'block'; }
+  });
+  t.addEventListener('mousemove', function(e){
+    var x = e.clientX + 14, y = e.clientY + 14;
+    var w = tip.offsetWidth, h = tip.offsetHeight;
+    if(x + w > window.innerWidth) x = window.innerWidth - w - 8;
+    if(y + h > window.innerHeight) y = window.innerHeight - h - 8;
+    tip.style.left = x + 'px'; tip.style.top = y + 'px';
+  });
+  t.addEventListener('mouseleave', function(){ tip.style.display = 'none'; });
+});
+</script>
+</body>
+</html>
