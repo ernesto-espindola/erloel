@@ -200,6 +200,21 @@ if exist "!SCRIPT_DIR!\mini_checks\*" (
 )
 
 echo  output\ directory ready.
+
+:: Extract SQLStatements.zip if present
+if exist "!SCRIPT_DIR!\SQLStatements.zip" (
+    echo  Extracting SQLStatements.zip...
+    mkdir "!TARGET_DIR!\SQLStatements" 2>nul
+    powershell -NoProfile -Command "Expand-Archive -Path '!SCRIPT_DIR!\SQLStatements.zip' -DestinationPath '!TARGET_DIR!\SQLStatements' -Force" >nul 2>&1
+    if errorlevel 1 (
+        echo  WARNING: Could not extract SQLStatements.zip. Extract it manually to !TARGET_DIR!\SQLStatements\
+    ) else (
+        for /f %%c in ('dir /b "!TARGET_DIR!\SQLStatements\*" 2^>nul ^| find /c /v ""') do set SQ_COUNT=%%c
+        echo  SQLStatements\ ^(!SQ_COUNT! scripts^) ... OK
+    )
+) else (
+    echo  SQLStatements.zip not found - skipping ^(add it alongside the installer to include^)
+)
 echo.
 
 :: ── Verify hdbcli loads from install location ─────────────────────────────────
