@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SAP HANA Mini Checks Console v2.0 — Installation Guide</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f0f2f5;--surf:#ffffff;--surf2:#f5f7fa;--border:#d1d5db;
+  --accent:#0057a8;--text:#1e293b;--muted:#64748b;
+  --code-bg:#0d1b2e;--code-fg:#e2eaf5;
+  --ok:#16a34a;--warn:#b45309;--err:#dc2626;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;font-size:15px;line-height:1.65}
+
+#page-header{background:linear-gradient(135deg,#002a86 0%,#0057a8 55%,#0070f2 100%);color:#fff;padding:48px 40px 40px}
+#page-header h1{font-size:28px;font-weight:700;margin-bottom:6px}
+#page-header h1 span{color:#7ab8f5}
+#page-header .subtitle{font-size:14px;color:#b0c8e8;margin-bottom:18px}
+.meta-row{display:flex;flex-wrap:wrap;gap:24px;font-size:13px;color:#8aaac8}
+.meta-row b{color:#daeaf8}
+
+.wrapper{max-width:1000px;margin:0 auto;padding:32px 24px 64px}
+
+#toc{background:var(--surf);border:1px solid var(--border);border-radius:10px;padding:24px 28px;margin-bottom:32px}
+#toc h2{font-size:13px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:14px}
+#toc ol{padding-left:20px;display:grid;grid-template-columns:1fr 1fr;gap:4px 32px}
+#toc li{font-size:13.5px}
+#toc a{color:var(--accent);text-decoration:none}
+#toc a:hover{text-decoration:underline}
+
+section{background:var(--surf);border:1px solid var(--border);border-radius:10px;padding:32px 36px;margin-bottom:24px}
+section h2{font-size:20px;font-weight:700;color:var(--accent);margin-bottom:6px;display:flex;align-items:center;gap:10px}
+section h2 .icon{font-size:22px}
+.section-desc{font-size:13px;color:var(--muted);margin-bottom:22px;border-bottom:1px solid var(--border);padding-bottom:14px}
+section h3{font-size:15px;font-weight:600;color:var(--text);margin:22px 0 10px}
+
+.callout{border-radius:7px;padding:14px 18px;margin:14px 0;font-size:13.5px;display:flex;gap:12px;align-items:flex-start}
+.callout .ico{font-size:18px;flex-shrink:0;margin-top:1px}
+.callout-warn{background:#fffbeb;border:1px solid #fde68a;color:#92400e}
+.callout-info{background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af}
+.callout-ok{background:#f0fdf4;border:1px solid #bbf7d0;color:#14532d}
+.callout-tip{background:#fdf4ff;border:1px solid #e9d5ff;color:#581c87}
+
+.dtable{width:100%;border-collapse:collapse;font-size:13.5px;margin:12px 0}
+.dtable th{background:var(--surf2);padding:8px 14px;text-align:left;font-weight:600;border-bottom:2px solid var(--border);white-space:nowrap}
+.dtable td{padding:7px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+.dtable tr:last-child td{border-bottom:none}
+.dtable tr:nth-child(even) td{background:rgba(0,0,0,.018)}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.badge-req{background:#fee2e2;color:#991b1b}
+.badge-opt{background:#fef3c7;color:#92400e}
+.badge-ok{background:#d1fae5;color:#065f46}
+
+pre{background:var(--code-bg);color:var(--code-fg);border-radius:7px;padding:16px 18px;font-size:13px;
+  font-family:'Cascadia Code','Consolas',monospace;overflow-x:auto;margin:10px 0;line-height:1.7}
+code{background:rgba(0,87,168,.09);padding:1px 6px;border-radius:3px;font-size:13px;font-family:'Cascadia Code','Consolas',monospace}
+
+/* Numbered step cards */
+.steps{list-style:none;padding:0;counter-reset:step}
+.steps li{counter-increment:step;display:flex;gap:16px;margin-bottom:28px;align-items:flex-start}
+.steps li::before{content:counter(step);background:var(--accent);color:#fff;font-size:12px;font-weight:700;
+  min-width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+.step-body{flex:1}
+.step-body strong{display:block;font-size:15px;margin-bottom:5px}
+.step-body p,.step-body span{font-size:13.5px;color:var(--muted)}
+
+/* Console simulation */
+.console{background:#0c1a28;border-radius:8px;padding:0;overflow:hidden;margin:12px 0;font-family:'Cascadia Code','Consolas',monospace;font-size:12.5px}
+.console-bar{background:#1e3a5a;padding:8px 14px;display:flex;align-items:center;gap:8px;font-size:12px;color:#7ab8f5}
+.console-bar .dot{width:11px;height:11px;border-radius:50%}
+.dot-r{background:#ef4444}.dot-y{background:#f59e0b}.dot-g{background:#22c55e}
+.console-body{padding:14px 18px;line-height:1.9}
+.c-white{color:#e2eaf5}
+.c-green{color:#4ade80}
+.c-yellow{color:#fbbf24}
+.c-red{color:#f87171}
+.c-blue{color:#7ab8f5}
+.c-dim{color:#546e7a}
+.c-input{color:#fde68a}
+.prompt{color:#4ade80}
+
+.tree{background:var(--code-bg);color:var(--code-fg);border-radius:7px;padding:16px 18px;
+  font-size:13px;font-family:'Cascadia Code','Consolas',monospace;line-height:1.9}
+.folder{color:#7ab8f5}.req{color:#ef9a9a}.opt{color:#ffe082}.gen{color:#a5d6a7}.comment{color:#546e7a;font-style:italic}
+
+kbd{background:#e2e8f0;border:1px solid #cbd5e1;border-radius:4px;padding:2px 7px;font-size:12px;font-family:monospace}
+
+.step-badge{display:inline-block;background:var(--accent);color:#fff;font-size:11px;font-weight:700;
+  padding:2px 10px;border-radius:10px;margin-bottom:10px;letter-spacing:.4px}
+
+footer{text-align:center;font-size:12px;color:var(--muted);margin-top:40px;padding-bottom:20px}
+footer a{color:var(--accent);text-decoration:none}
+[id]{scroll-margin-top:24px}
+</style>
+</head>
+<body>
+
+<div id="page-header">
+  <h1>SAP HANA <span>Mini Checks Console v2.0</span></h1>
+  <div class="subtitle">install_minichecks_console_full.zip &nbsp;·&nbsp; Installation Guide</div>
+  <div class="meta-row">
+    <span><b>Developer:</b> Ernesto Espindola — ernesto.espindola@sap.com</span>
+    <span><b>Team:</b> RDE LAC</span>
+    <span><b>Date:</b> 2026-08-21</span>
+  </div>
+</div>
+
+<div class="wrapper">
+
+<nav id="toc">
+  <h2>Contents</h2>
+  <ol>
+    <li><a href="#overview">Overview</a></li>
+    <li><a href="#prereqs">Prerequisites</a></li>
+    <li><a href="#download">Step 0 — Download the Package</a></li>
+    <li><a href="#extract">Step 1 — Extract the ZIP</a></li>
+    <li><a href="#run">Step 2 — Run the Installer</a></li>
+    <li><a href="#installer-steps">Installer Steps 1–5 in Detail</a></li>
+    <li><a href="#result">What Gets Installed</a></li>
+    <li><a href="#launch">Launching the App</a></li>
+    <li><a href="#troubleshoot">Troubleshooting</a></li>
+  </ol>
+</nav>
+
+<!-- ═══ OVERVIEW ═══ -->
+<section id="overview">
+  <h2><span class="icon">📋</span> Overview</h2>
+  <div class="section-desc">What the installer does in one minute.</div>
+  <p>
+    The installer sets up the <strong>SAP HANA Mini Checks Console v2.0</strong> — a browser-based
+    SQL execution environment for SAP HANA. It runs entirely on your workstation; no server or cloud
+    connection is needed beyond network access to the target HANA system.
+  </p>
+  <br/>
+  <p>The installer package (<code>install_minichecks_console_full.zip</code>) contains:</p>
+  <br/>
+  <table class="dtable">
+    <thead><tr><th>File in ZIP</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td><code>install_minichecks_console.bat</code></td><td>The installer script (5 automated steps)</td></tr>
+      <tr><td><code>minichecks_console_V2.0.py</code></td><td>The main application (~3 000 lines, Python)</td></tr>
+      <tr><td><code>SQLStatements.zip</code></td><td>421 SAP HANA SQL mini-check scripts (from SAP Note SQLStatements collection)</td></tr>
+    </tbody>
+  </table>
+  <br/>
+  <div class="callout callout-ok">
+    <span class="ico">✅</span>
+    <div>The installer works from a completely fresh Windows machine — it detects and auto-installs the <code>hdbcli</code> Python driver via pip if not already present. Only Python 3.10+ 64-bit must be installed beforehand.</div>
+  </div>
+</section>
+
+<!-- ═══ PREREQS ═══ -->
+<section id="prereqs">
+  <h2><span class="icon">✅</span> Prerequisites</h2>
+  <div class="section-desc">What must be in place before running the installer.</div>
+  <table class="dtable">
+    <thead><tr><th>Requirement</th><th>Minimum</th><th>Status</th><th>Where to get it</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Python</strong></td>
+        <td>3.10+, 64-bit, with <code>tkinter</code></td>
+        <td><span class="badge badge-req">Required</span></td>
+        <td><code>python.org/downloads</code> — download the Windows 64-bit installer. During setup, check <strong>"Add Python to PATH"</strong>.</td>
+      </tr>
+      <tr>
+        <td><strong>hdbcli</strong></td>
+        <td>Any recent version</td>
+        <td><span class="badge badge-ok">Auto-installed</span></td>
+        <td>The installer detects if it is already present. If not, it runs <code>pip install hdbcli</code> automatically (requires internet access to pypi.org).</td>
+      </tr>
+      <tr>
+        <td><strong>Chart.js</strong></td>
+        <td>chart.umd.min.js</td>
+        <td><span class="badge badge-ok">Auto-downloaded</span></td>
+        <td>Downloaded from <code>cdn.jsdelivr.net</code> during install. If blocked by corporate proxy, the Chart tab will be unavailable — the rest of the app works normally.</td>
+      </tr>
+      <tr>
+        <td><strong>Network to HANA</strong></td>
+        <td>Port 30241 (or custom)</td>
+        <td><span class="badge badge-req">Required at runtime</span></td>
+        <td>Your workstation must be able to reach the HANA host on the SQL port. VPN may be needed.</td>
+      </tr>
+      <tr>
+        <td><strong>Port 5000 free</strong></td>
+        <td>localhost:5000</td>
+        <td><span class="badge badge-req">Required at runtime</span></td>
+        <td>The app runs a local HTTP server on port 5000. The installer checks this and warns if occupied.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Verify Python before running the installer</h3>
+  <p>Open PowerShell or Command Prompt and run:</p>
+  <pre>python --version
+python -c "import struct; print('64-bit' if struct.calcsize('P')*8==64 else '32-bit — WRONG')"</pre>
+  <p style="font-size:13.5px;color:var(--muted);margin-top:6px">Both commands must succeed and Python must be 64-bit. If <code>python</code> is not found, install Python first.</p>
+</section>
+
+<!-- ═══ DOWNLOAD ═══ -->
+<section id="download">
+  <h2><span class="icon">📥</span> Step 0 — Download the Package</h2>
+  <div class="section-desc">Get the installer ZIP from GitHub.</div>
+  <p>The package is hosted publicly on GitHub. Download it from:</p>
+  <pre>https://raw.githubusercontent.com/ernesto-espindola/erloel/main/HANA%20Tool%20AI/hana_tool/install_minichecks_console_full.zip</pre>
+  <br/>
+  <p>Save the ZIP to your <strong>Downloads</strong> folder (or any folder you prefer). Do not open the files from inside the ZIP directly — extract first.</p>
+  <br/>
+  <div class="callout callout-info">
+    <span class="ico">ℹ️</span>
+    <div>The full repo is at <strong>github.com/ernesto-espindola/erloel</strong> (public). All tools and installers from the RDE LAC team are maintained there.</div>
+  </div>
+</section>
+
+<!-- ═══ EXTRACT ═══ -->
+<section id="extract">
+  <h2><span class="icon">📂</span> Step 1 — Extract the ZIP</h2>
+  <div class="section-desc">Unzip all files before running the installer.</div>
+  <ol class="steps">
+    <li>
+      <div class="step-body">
+        <strong>Locate the downloaded ZIP</strong>
+        <p>Open File Explorer and navigate to your <code>Downloads</code> folder. Find <code>install_minichecks_console_full.zip</code>.</p>
+      </div>
+    </li>
+    <li>
+      <div class="step-body">
+        <strong>Right-click → Extract All…</strong>
+        <p>Right-click the ZIP file and choose <strong>Extract All…</strong>. Use the suggested destination (a subfolder in Downloads) or choose any folder. Click <strong>Extract</strong>.</p>
+      </div>
+    </li>
+    <li>
+      <div class="step-body">
+        <strong>Confirm the extracted files</strong>
+        <p>After extraction you should see three files in the folder:</p>
+        <div class="tree" style="margin-top:8px">
+<span class="folder">Downloads\install_minichecks_console_full\</span><br>
+├── <span class="req">install_minichecks_console.bat</span>   <span class="comment">← the installer</span><br>
+├── <span class="req">minichecks_console_V2.0.py</span>        <span class="comment">← main application</span><br>
+└── <span class="req">SQLStatements.zip</span>                 <span class="comment">← 421 SQL scripts</span>
+        </div>
+      </div>
+    </li>
+  </ol>
+  <div class="callout callout-warn">
+    <span class="ico">⚠️</span>
+    <div><strong>Do NOT run the .bat directly from inside the ZIP</strong> (double-clicking without extracting). The installer reads files from its own folder — they must all be extracted first.</div>
+  </div>
+</section>
+
+<!-- ═══ RUN ═══ -->
+<section id="run">
+  <h2><span class="icon">▶️</span> Step 2 — Run the Installer</h2>
+  <div class="section-desc">How to launch install_minichecks_console.bat correctly.</div>
+  <ol class="steps">
+    <li>
+      <div class="step-body">
+        <strong>Open the extracted folder in File Explorer</strong>
+        <p>Navigate to the folder where you extracted the ZIP.</p>
+      </div>
+    </li>
+    <li>
+      <div class="step-body">
+        <strong>Right-click install_minichecks_console.bat → Run as administrator</strong>
+        <p>Running as administrator is recommended to allow creating directories and desktop shortcuts without permission errors. If you choose not to run as admin, enter a path inside your user profile when prompted (e.g. <code>C:\Users\YourName\Downloads\minichecks_console</code> — which is the default).</p>
+      </div>
+    </li>
+    <li>
+      <div class="step-body">
+        <strong>A Command Prompt window opens and the installer begins</strong>
+        <p>The installer runs 5 steps automatically. The only interaction required is entering the installation path at step 3 — press <kbd>Enter</kbd> to accept the default.</p>
+      </div>
+    </li>
+  </ol>
+  <div class="callout callout-tip">
+    <span class="ico">💡</span>
+    <div>If you see <em>"This app has been blocked by your system administrator"</em>, right-click the .bat → <strong>Properties</strong> → check <strong>Unblock</strong> at the bottom → OK. Then run again.</div>
+  </div>
+  <div class="callout callout-info">
+    <span class="ico">ℹ️</span>
+    <div>If you are running from <strong>PowerShell</strong>, type <code>.\install_minichecks_console.bat</code> (with the <code>.\</code> prefix). Do NOT just type the filename — PowerShell requires it.</div>
+  </div>
+</section>
+
+<!-- ═══ INSTALLER STEPS ═══ -->
+<section id="installer-steps">
+  <h2><span class="icon">🔢</span> Installer Steps 1–5 in Detail</h2>
+  <div class="section-desc">What happens at each step and what to expect on screen.</div>
+
+  <!-- Step 1 -->
+  <div class="step-badge">STEP 1 / 5</div>
+  <h3>Checking Python</h3>
+  <p>The installer verifies that Python is installed, is 64-bit, and is version 3.10 or later.</p>
+  <div class="console">
+    <div class="console-bar"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>&nbsp; Command Prompt — install_minichecks_console.bat</div>
+    <div class="console-body">
+      <span class="c-white">[1/5] Checking Python...</span><br>
+      <span class="c-green"> Found: Python 3.14.6 (64-bit) -- OK</span>
+    </div>
+  </div>
+  <div class="callout callout-warn">
+    <span class="ico">⚠️</span>
+    <div>If you see <em>"Python is not installed or not in PATH"</em>: install Python 3.10+ 64-bit from <code>python.org/downloads</code>, check <strong>"Add Python to PATH"</strong> during setup, then re-run the installer.</div>
+  </div>
+  <div class="callout callout-warn">
+    <span class="ico">⚠️</span>
+    <div>If you see <em>"Python found but it is NOT 64-bit"</em>: uninstall the 32-bit Python and install the 64-bit version. The <code>hdbcli</code> driver requires 64-bit Python.</div>
+  </div>
+
+  <!-- Step 2 -->
+  <div class="step-badge" style="margin-top:28px">STEP 2 / 5</div>
+  <h3>Setting up hdbcli</h3>
+  <p>The installer checks for the SAP HANA Python client driver (<code>hdbcli</code>) using three detection methods in order:</p>
+  <table class="dtable">
+    <thead><tr><th>Scenario</th><th>What happens</th><th>Requires internet?</th></tr></thead>
+    <tbody>
+      <tr><td>Bundled <code>lib\pyhdbcli.pyd</code> found alongside installer</td><td>Uses the pre-bundled files (fastest, offline)</td><td>No</td></tr>
+      <tr><td>hdbcli already pip-installed in Python</td><td>Detects it and skips install</td><td>No</td></tr>
+      <tr><td>Neither found</td><td>Runs <code>pip install hdbcli</code> from PyPI</td><td><strong>Yes</strong></td></tr>
+    </tbody>
+  </table>
+  <br/>
+  <p>After hdbcli is set up, the installer also attempts to download <strong>Chart.js</strong> from the CDN. If the CDN is unreachable (corporate proxy blocks it), Chart.js is skipped and the Chart tab in the app will be unavailable — everything else works normally.</p>
+  <div class="console">
+    <div class="console-bar"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>&nbsp; Command Prompt</div>
+    <div class="console-body">
+      <span class="c-white">[2/5] Setting up hdbcli (SAP HANA Python driver)...</span><br><br>
+      <span class="c-green"> hdbcli already installed in Python environment -- OK.</span><br><br>
+      <span class="c-white"> Chart.js not found in lib\.</span><br>
+      <span class="c-white"> Attempting to download chart.umd.min.js from CDN...</span><br>
+      <span class="c-green">  chart.umd.min.js downloaded OK.</span>
+    </div>
+  </div>
+
+  <!-- Step 3 -->
+  <div class="step-badge" style="margin-top:28px">STEP 3 / 5</div>
+  <h3>Installation directory</h3>
+  <p>The installer asks where to install the app. The default is your <strong>Downloads</strong> folder:</p>
+  <div class="console">
+    <div class="console-bar"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>&nbsp; Command Prompt</div>
+    <div class="console-body">
+      <span class="c-white">[3/5] Installation directory</span><br><br>
+      <span class="c-white"> Enter the full path where you want to install Mini Checks Console.</span><br>
+      <span class="c-white"> Example: C:\Users\I522148\Downloads\minichecks_console</span><br>
+      <span class="c-white"> (Press Enter to use default: C:\Users\I522148\Downloads\minichecks_console)</span><br><br>
+      <span class="c-input">  Install to: </span><span class="c-dim">← press Enter here to accept the default</span><br>
+      <span class="c-white"> Installing to: C:\Users\I522148\Downloads\minichecks_console</span>
+    </div>
+  </div>
+  <div class="callout callout-tip">
+    <span class="ico">💡</span>
+    <div>Press <kbd>Enter</kbd> to accept the default path — no admin rights required. Only change the path if you want the app in a specific location. Avoid paths under <code>C:\Program Files</code> unless running as Administrator.</div>
+  </div>
+
+  <!-- Step 4 -->
+  <div class="step-badge" style="margin-top:28px">STEP 4 / 5</div>
+  <h3>Creating directories and copying files</h3>
+  <p>The installer creates the full directory tree, copies all files, and extracts the SQL scripts:</p>
+  <div class="console">
+    <div class="console-bar"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>&nbsp; Command Prompt</div>
+    <div class="console-body">
+      <span class="c-white">[4/5] Creating directory structure and copying files...</span><br>
+      <span class="c-white"> Directories created.</span><br>
+      <span class="c-green"> minichecks_console_V2.0.py ... OK</span><br>
+      <span class="c-green"> lib\ (hdbcli from pip site-packages) ... OK</span><br>
+      <span class="c-white"> output\ directory ready.</span><br>
+      <span class="c-white"> Extracting SQLStatements.zip into mini_checks\...</span><br>
+      <span class="c-green"> mini_checks\ (421 scripts from SQLStatements) ... OK</span><br><br>
+      <span class="c-white"> Verifying hdbcli import...</span><br>
+      <span class="c-green">   hdbcli import OK</span><br>
+      <span class="c-green"> hdbcli verified OK.</span><br><br>
+      <span class="c-white"> Checking port 5000 (default server port)...</span><br>
+      <span class="c-green"> Port 5000 is available -- OK.</span>
+    </div>
+  </div>
+  <p style="margin-top:10px;font-size:13.5px;color:var(--muted)">The 421 SQL scripts from <code>SQLStatements.zip</code> are extracted into <code>mini_checks\</code>, overwriting any previous contents. These are the SAP HANA diagnostic SQL scripts from the SAP Note SQLStatements collection.</p>
+
+  <!-- Step 5 -->
+  <div class="step-badge" style="margin-top:28px">STEP 5 / 5</div>
+  <h3>Creating launcher and desktop shortcut</h3>
+  <p>The installer creates two launch methods:</p>
+  <table class="dtable">
+    <thead><tr><th>Item</th><th>Location</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td><code>run_minichecks.bat</code></td><td>Inside the install folder</td><td>Starts the Python server and opens the browser</td></tr>
+      <tr><td><strong>HANA Mini Checks v2</strong> shortcut</td><td>Desktop</td><td>One-click launch from the Desktop</td></tr>
+    </tbody>
+  </table>
+  <div class="console">
+    <div class="console-bar"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>&nbsp; Command Prompt</div>
+    <div class="console-body">
+      <span class="c-white">[5/5] Creating launcher and desktop shortcut...</span><br>
+      <span class="c-green"> run_minichecks.bat created.</span><br>
+      <span class="c-green"> Desktop shortcut created: "HANA Mini Checks v2"</span>
+    </div>
+  </div>
+  <br/>
+
+  <!-- Summary screen -->
+  <h3>Installation complete — summary screen</h3>
+  <div class="console">
+    <div class="console-bar"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>&nbsp; Command Prompt</div>
+    <div class="console-body">
+      <span class="c-blue"> =================================================================</span><br>
+      <span class="c-blue">  Installation complete!</span><br>
+      <span class="c-blue"> =================================================================</span><br><br>
+      <span class="c-white">  Installed to    : C:\Users\I522148\Downloads\minichecks_console</span><br>
+      <span class="c-white">  Launcher        : ...\minichecks_console\run_minichecks.bat</span><br>
+      <span class="c-white">  Desktop shortcut: C:\Users\I522148\Desktop\HANA Mini Checks v2.lnk</span><br>
+      <span class="c-white">  hdbcli source   : pip</span><br>
+      <span class="c-white">  SQL scripts     : ...\minichecks_console\mini_checks\</span><br>
+      <span class="c-white">  Output folder   : ...\minichecks_console\output\</span><br><br>
+      <span class="c-white">  HOW TO USE:</span><br>
+      <span class="c-white">  1. Double-click "HANA Mini Checks v2" on the Desktop.</span><br>
+      <span class="c-white">  2. Browser opens at http://127.0.0.1:5000 automatically.</span><br>
+      <span class="c-white">  3. Enter HANA host, port, database, user, password then click Connect.</span>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ RESULT ═══ -->
+<section id="result">
+  <h2><span class="icon">📁</span> What Gets Installed</h2>
+  <div class="section-desc">Directory structure created by the installer.</div>
+  <div class="tree">
+<span class="folder">C:\Users\YourName\Downloads\minichecks_console\</span>  <span class="comment">← install root</span><br>
+│<br>
+├── <span class="req">minichecks_console_V2.0.py</span>   <span class="comment">← main application</span><br>
+├── run_minichecks.bat              <span class="comment">← launcher</span><br>
+│<br>
+├── <span class="folder">lib\</span>                         <span class="comment">← hdbcli driver (bundled or pip placeholder)</span><br>
+│   ├── hdbcli_source.txt           <span class="comment">← marker when using pip-installed hdbcli</span><br>
+│   └── <span class="opt">chart.umd.min.js</span>          <span class="comment">← Chart.js (if downloaded successfully)</span><br>
+│<br>
+├── <span class="folder">mini_checks\</span>                 <span class="comment">← 421 SAP HANA SQL diagnostic scripts</span><br>
+│   ├── HANA_Backups_CatalogSize.txt<br>
+│   ├── HANA_Memory_Overview.txt<br>
+│   └── <span class="comment">... 418 more .txt files</span><br>
+│<br>
+└── <span class="folder">output\</span>                      <span class="comment">← SQL execution results saved here</span><br>
+<br>
+<span class="folder">%USERPROFILE%\Desktop\</span><br>
+└── HANA Mini Checks v2.lnk         <span class="comment">← desktop shortcut</span>
+  </div>
+</section>
+
+<!-- ═══ LAUNCH ═══ -->
+<section id="launch">
+  <h2><span class="icon">🚀</span> Launching the App</h2>
+  <div class="section-desc">How to start the Mini Checks Console after installation.</div>
+  <ol class="steps">
+    <li>
+      <div class="step-body">
+        <strong>Double-click "HANA Mini Checks v2" on the Desktop</strong>
+        <p>Or run <code>run_minichecks.bat</code> from the install folder. A black console window opens — keep it open while using the app.</p>
+      </div>
+    </li>
+    <li>
+      <div class="step-body">
+        <strong>The browser opens automatically at http://127.0.0.1:5000</strong>
+        <p>If the browser does not open automatically, open it manually and navigate to <code>http://127.0.0.1:5000</code>.</p>
+      </div>
+    </li>
+    <li>
+      <div class="step-body">
+        <strong>Enter the HANA connection details</strong>
+        <p>Fill in: <strong>Host</strong> (HANA hostname or IP), <strong>Port</strong> (default <code>30241</code> for single-tenant or <code>3&lt;NN&gt;15</code> for tenant), <strong>Database</strong>, <strong>User</strong>, <strong>Password</strong>. Click <strong>Connect</strong>.</p>
+      </div>
+    </li>
+    <li>
+      <div class="step-body">
+        <strong>A green dot confirms a live HANA connection</strong>
+        <p>Write SQL in the editor and press <kbd>F5</kbd> or click <strong>Run</strong> to execute. Use the <strong>Mini Checks</strong> sidebar to browse and load the 421 diagnostic scripts from <code>mini_checks\</code>.</p>
+      </div>
+    </li>
+    <li>
+      <div class="step-body">
+        <strong>To stop the server</strong>
+        <p>Press <kbd>Ctrl</kbd>+<kbd>C</kbd> in the black console window, or simply close it.</p>
+      </div>
+    </li>
+  </ol>
+  <div class="callout callout-warn">
+    <span class="ico">⚠️</span>
+    <div><strong>Keep the console window open</strong> while using the app. Closing it stops the local HTTP server and the browser interface will stop responding.</div>
+  </div>
+</section>
+
+<!-- ═══ TROUBLESHOOT ═══ -->
+<section id="troubleshoot">
+  <h2><span class="icon">🔧</span> Troubleshooting</h2>
+  <div class="section-desc">Common errors and how to resolve them.</div>
+
+  <h3>"requires was unexpected at this time" when running the .bat</h3>
+  <div class="callout callout-warn">
+    <span class="ico">⚠️</span>
+    <div>The file has LF (Unix) line endings. Always use the <code>.zip</code> package — extracting it preserves CRLF line endings. If you have the bare <code>.bat</code> file, run in PowerShell:<br/><br/>
+    <code>(Get-Content "install_minichecks_console.bat") | Set-Content "install_minichecks_console.bat"</code></div>
+  </div>
+
+  <h3>"This app has been blocked by your system administrator"</h3>
+  <div class="callout callout-warn">
+    <span class="ico">⚠️</span>
+    <div>Right-click the <code>.bat</code> file → <strong>Properties</strong> → check <strong>Unblock</strong> at the bottom → OK. Then run again.</div>
+  </div>
+
+  <h3>"Cannot create directory" error at step 3</h3>
+  <div class="callout callout-warn">
+    <span class="ico">⚠️</span>
+    <div>The path requires Administrator rights (e.g. <code>C:\HANA_Tools\</code>). Either run the installer as Administrator, or enter a path inside your user profile when prompted:<br/><br/>
+    <code>C:\Users\YourName\Downloads\minichecks_console</code> (the default) does not require admin.</div>
+  </div>
+
+  <h3>hdbcli pip install fails</h3>
+  <div class="callout callout-warn">
+    <span class="ico">⚠️</span>
+    <div>
+      <ul style="padding-left:20px;line-height:2.2">
+        <li>Check internet connectivity: <code>ping pypi.org</code></li>
+        <li>If behind a corporate proxy: <code>pip install hdbcli --proxy http://proxy:port</code></li>
+        <li>Alternatively, obtain the <code>hdbcli-*.whl</code> wheel from SAP and run <code>pip install hdbcli-*.whl</code></li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Browser does not open / "Address not reachable"</h3>
+  <div class="callout callout-info">
+    <span class="ico">ℹ️</span>
+    <div>
+      <ul style="padding-left:20px;line-height:2.2">
+        <li>Check the console window — if it shows an error, port 5000 may be in use</li>
+        <li>Find what is using port 5000: <code>netstat -ano | findstr :5000</code></li>
+        <li>Stop that process, or change the port in the last lines of <code>minichecks_console_V2.0.py</code></li>
+        <li>Navigate manually to <code>http://127.0.0.1:5000</code> if the browser did not open automatically</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>HANA connection fails (red dot)</h3>
+  <div class="callout callout-info">
+    <span class="ico">ℹ️</span>
+    <div>
+      <ul style="padding-left:20px;line-height:2.2">
+        <li>Verify host name/IP and port number — for SystemDB use <code>3&lt;NN&gt;13</code>, for tenant use <code>3&lt;NN&gt;15</code></li>
+        <li>Confirm your workstation can reach the HANA host (VPN may be required)</li>
+        <li>Ensure the HANA user has the <code>PUBLIC</code> role and sufficient permissions for the queries you intend to run</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Chart tab not working</h3>
+  <div class="callout callout-info">
+    <span class="ico">ℹ️</span>
+    <div>
+      Chart.js was not downloaded (CDN blocked). To enable it manually:<br/><br/>
+      Download <code>chart.umd.min.js</code> on a machine with internet access from:<br/>
+      <code>https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.min.js</code><br/><br/>
+      Copy the file to: <code>[install folder]\lib\chart.umd.min.js</code> and restart the app.
+    </div>
+  </div>
+
+  <h3>mini_checks\ scripts not appearing in the sidebar</h3>
+  <div class="callout callout-info">
+    <span class="ico">ℹ️</span>
+    <div>Verify the scripts were extracted: open <code>[install folder]\mini_checks\</code> in Explorer — you should see ~421 <code>.txt</code> files. If empty, extract <code>SQLStatements.zip</code> manually into that folder.</div>
+  </div>
+</section>
+
+</div><!-- /.wrapper -->
+
+<footer>
+  SAP HANA Mini Checks Console v2.0 &nbsp;·&nbsp; Installation Guide &nbsp;·&nbsp;
+  Developer: Ernesto Espindola &nbsp;·&nbsp;
+  <a href="mailto:ernesto.espindola@sap.com">ernesto.espindola@sap.com</a>
+  &nbsp;·&nbsp; RDE LAC &nbsp;·&nbsp; 2026-08-21
+</footer>
+
+</body>
+</html>
