@@ -204,18 +204,9 @@ echo.
 
 :: ── Verify hdbcli loads from install location ─────────────────────────────────
 echo  Verifying hdbcli import...
-python -c "
-import sys, os
-lib = os.path.join(r'!TARGET_DIR!', 'lib')
-if os.path.isdir(lib):
-    sys.path.insert(0, lib)
-from hdbcli import dbapi
-ver = getattr(dbapi, '__version__', 'unknown')
-print('  hdbcli import OK -- version:', ver)
-" 2>&1
+python -c "import sys,os; lib=os.path.join(r'!TARGET_DIR!','lib'); [sys.path.insert(0,lib)] if os.path.isdir(lib) else None; from hdbcli import dbapi; print('  hdbcli import OK')" 2>&1
 if errorlevel 1 (
-    echo  WARNING: hdbcli import test failed from install location.
-    echo  If hdbcli was pip-installed, ensure you run the app with the same Python.
+    echo  WARNING: hdbcli import test failed. Ensure hdbcli is installed for this Python.
 ) else (
     echo  hdbcli verified OK.
 )
