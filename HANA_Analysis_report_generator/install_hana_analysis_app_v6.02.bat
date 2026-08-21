@@ -57,7 +57,7 @@ echo [2/7] Installing Python packages...
 echo.
 
 echo  anthropic ^(required - SAP AI SDK^)...
-pip install anthropic --quiet
+python -m pip install anthropic --quiet
 if errorlevel 1 (
     echo  ERROR: pip install anthropic failed.
     echo  Check your network connection or corporate proxy settings.
@@ -67,7 +67,7 @@ if errorlevel 1 (
 echo  anthropic -- OK
 
 echo  python-pptx ^(optional - PowerPoint export^)...
-pip install python-pptx --quiet 2>nul
+python -m pip install python-pptx --quiet 2>nul
 if errorlevel 1 (
     echo  WARNING: python-pptx not installed. PowerPoint export will be unavailable.
 ) else (
@@ -75,7 +75,7 @@ if errorlevel 1 (
 )
 
 echo  Pillow ^(optional - SAP logo display^)...
-pip install Pillow --quiet 2>nul
+python -m pip install Pillow --quiet 2>nul
 if errorlevel 1 (
     echo  WARNING: Pillow not installed. Logo in app header may not display.
 ) else (
