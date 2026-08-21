@@ -138,11 +138,11 @@ echo.
 echo [3/5] Installation directory
 echo.
 echo  Enter the full path where you want to install Mini Checks Console.
-echo  Example: C:\HANA_Tools\minichecks_console
-echo  ^(Press Enter to use default: C:\HANA_Tools\minichecks_console^)
+echo  Example: C:\Users\%USERNAME%\Downloads\minichecks_console
+echo  ^(Press Enter to use default: %USERPROFILE%\Downloads\minichecks_console^)
 echo.
 set /p "TARGET_DIR=  Install to: "
-if "!TARGET_DIR!"=="" set "TARGET_DIR=C:\HANA_Tools\minichecks_console"
+if "!TARGET_DIR!"=="" set "TARGET_DIR=%USERPROFILE%\Downloads\minichecks_console"
 if "!TARGET_DIR:~-1!"=="\" set "TARGET_DIR=!TARGET_DIR:~0,-1!"
 echo  Installing to: !TARGET_DIR!
 echo.
@@ -203,17 +203,18 @@ echo  output\ directory ready.
 
 :: Extract SQLStatements.zip if present
 if exist "!SCRIPT_DIR!\SQLStatements.zip" (
-    echo  Extracting SQLStatements.zip...
-    mkdir "!TARGET_DIR!\SQLStatements" 2>nul
-    powershell -NoProfile -Command "Expand-Archive -Path '!SCRIPT_DIR!\SQLStatements.zip' -DestinationPath '!TARGET_DIR!\SQLStatements' -Force" >nul 2>&1
+    echo  Extracting SQLStatements.zip into mini_checks\...
+    if exist "!TARGET_DIR!\mini_checks" rd /s /q "!TARGET_DIR!\mini_checks" 2>nul
+    mkdir "!TARGET_DIR!\mini_checks" 2>nul
+    powershell -NoProfile -Command "Expand-Archive -Path '!SCRIPT_DIR!\SQLStatements.zip' -DestinationPath '!TARGET_DIR!\mini_checks' -Force" >nul 2>&1
     if errorlevel 1 (
-        echo  WARNING: Could not extract SQLStatements.zip. Extract it manually to !TARGET_DIR!\SQLStatements\
+        echo  WARNING: Could not extract SQLStatements.zip. Extract it manually to !TARGET_DIR!\mini_checks\
     ) else (
-        for /f %%c in ('dir /b "!TARGET_DIR!\SQLStatements\*" 2^>nul ^| find /c /v ""') do set SQ_COUNT=%%c
-        echo  SQLStatements\ ^(!SQ_COUNT! scripts^) ... OK
+        for /f %%c in ('dir /b "!TARGET_DIR!\mini_checks\*" 2^>nul ^| find /c /v ""') do set SQ_COUNT=%%c
+        echo  mini_checks\ ^(!SQ_COUNT! scripts from SQLStatements^) ... OK
     )
 ) else (
-    echo  SQLStatements.zip not found - skipping ^(add it alongside the installer to include^)
+    echo  SQLStatements.zip not found - mini_checks\ left as-is
 )
 echo.
 
