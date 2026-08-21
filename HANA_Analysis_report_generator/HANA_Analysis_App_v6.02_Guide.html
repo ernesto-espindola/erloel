@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SAP HANA Full Analysis Report Generator v6.02 — Documentation</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f0f2f5;--surf:#ffffff;--surf2:#f5f7fa;--border:#d1d5db;
+  --accent:#0057a8;--success:#16a34a;--warn:#b45309;--error:#dc2626;
+  --text:#1e293b;--muted:#64748b;--code-bg:#0d1b2e;--code-fg:#e2eaf5;
+  --sap-blue:#0070f2;--sap-mango:#c35500;--sap-dark:#131e29;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;font-size:15px;line-height:1.65}
+
+/* ── Header ── */
+#page-header{
+  background:linear-gradient(135deg,#002a86 0%,#0057a8 55%,#0070f2 100%);
+  color:#fff;padding:48px 40px 40px;
+}
+#page-header h1{font-size:28px;font-weight:700;letter-spacing:.4px;margin-bottom:6px}
+#page-header h1 span{color:#7ab8f5}
+#page-header .subtitle{font-size:14px;color:#b0c8e8;margin-bottom:18px}
+.meta-row{display:flex;flex-wrap:wrap;gap:24px;font-size:13px;color:#8aaac8}
+.meta-row b{color:#daeaf8}
+
+/* ── Layout ── */
+.wrapper{max-width:1060px;margin:0 auto;padding:32px 24px 64px}
+
+/* ── Nav ── */
+#toc{background:var(--surf);border:1px solid var(--border);border-radius:10px;padding:24px 28px;margin-bottom:32px}
+#toc h2{font-size:13px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:14px}
+#toc ol{padding-left:20px;display:grid;grid-template-columns:1fr 1fr;gap:4px 32px}
+#toc li{font-size:13.5px}
+#toc a{color:var(--accent);text-decoration:none}
+#toc a:hover{text-decoration:underline}
+
+/* ── Sections ── */
+section{background:var(--surf);border:1px solid var(--border);border-radius:10px;padding:32px 36px;margin-bottom:24px}
+section h2{font-size:20px;font-weight:700;color:var(--accent);margin-bottom:6px;display:flex;align-items:center;gap:10px}
+section h2 .icon{font-size:22px}
+.section-desc{font-size:13px;color:var(--muted);margin-bottom:22px;border-bottom:1px solid var(--border);padding-bottom:14px}
+section h3{font-size:15px;font-weight:600;color:var(--text);margin:22px 0 10px}
+
+/* ── Callouts ── */
+.callout{border-radius:7px;padding:14px 18px;margin:14px 0;font-size:13.5px;display:flex;gap:12px;align-items:flex-start}
+.callout .ico{font-size:18px;flex-shrink:0;margin-top:1px}
+.callout-warn{background:#fffbeb;border:1px solid #fde68a;color:#92400e}
+.callout-info{background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af}
+.callout-ok{background:#f0fdf4;border:1px solid #bbf7d0;color:#14532d}
+.callout-tip{background:#fdf4ff;border:1px solid #e9d5ff;color:#581c87}
+
+/* ── Tables ── */
+.dtable{width:100%;border-collapse:collapse;font-size:13.5px;margin:12px 0}
+.dtable th{background:var(--surf2);color:var(--text);padding:8px 14px;text-align:left;font-weight:600;border-bottom:2px solid var(--border);white-space:nowrap}
+.dtable td{padding:7px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+.dtable tr:last-child td{border-bottom:none}
+.dtable tr:nth-child(even) td{background:rgba(0,0,0,.018)}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.badge-req{background:#fee2e2;color:#991b1b}
+.badge-opt{background:#fef3c7;color:#92400e}
+.badge-auto{background:#d1fae5;color:#065f46}
+.badge-pip{background:#eff6ff;color:#1e40af}
+
+/* ── Step list ── */
+.steps{counter-reset:step;padding:0;list-style:none}
+.steps li{counter-increment:step;display:flex;gap:16px;margin-bottom:18px;align-items:flex-start}
+.steps li::before{content:counter(step);background:var(--accent);color:#fff;font-size:12px;font-weight:700;
+  min-width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+.steps li .step-body{flex:1}
+.steps li .step-body strong{display:block;margin-bottom:3px;font-size:14.5px}
+.steps li .step-body span,.steps li .step-body p{font-size:13.5px;color:var(--muted)}
+
+/* ── Code ── */
+pre{background:var(--code-bg);color:var(--code-fg);border-radius:7px;padding:16px 18px;font-size:13px;
+  font-family:'Cascadia Code','Consolas',monospace;overflow-x:auto;margin:10px 0;line-height:1.7}
+code{background:rgba(0,87,168,.09);padding:1px 6px;border-radius:3px;font-size:13px;font-family:'Cascadia Code','Consolas',monospace}
+
+/* ── Feature cards ── */
+.feat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin-top:12px}
+.feat-card{background:var(--surf2);border:1px solid var(--border);border-radius:8px;padding:18px 20px}
+.feat-card .feat-icon{font-size:22px;margin-bottom:8px}
+.feat-card h4{font-size:14px;font-weight:600;margin-bottom:6px}
+.feat-card p{font-size:13px;color:var(--muted);line-height:1.5}
+
+/* ── Dir tree ── */
+.tree{background:var(--code-bg);color:var(--code-fg);border-radius:7px;padding:16px 18px;
+  font-size:13px;font-family:'Cascadia Code','Consolas',monospace;line-height:1.9}
+.tree .folder{color:#7ab8f5}
+.tree .req{color:#ef9a9a}
+.tree .opt{color:#ffe082}
+.tree .comment{color:#546e7a;font-style:italic}
+.tree .gen{color:#a5d6a7}
+
+/* ── Report section cards ── */
+.report-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin-top:12px}
+.report-card{border:1px solid var(--border);border-radius:8px;padding:14px 18px;background:var(--surf2)}
+.report-card .rc-badge{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;margin-bottom:6px}
+.rc-critical{background:#fee2e2;color:#991b1b}
+.rc-warn{background:#fef3c7;color:#92400e}
+.rc-ok{background:#d1fae5;color:#065f46}
+.rc-blue{background:#dbeafe;color:#1e40af}
+.report-card h4{font-size:14px;font-weight:600;margin-bottom:4px}
+.report-card p{font-size:13px;color:var(--muted);line-height:1.5}
+.pptx-badge{display:inline-block;font-size:10px;background:#e9d5ff;color:#581c87;padding:1px 7px;border-radius:8px;margin-left:6px;font-weight:600;vertical-align:middle}
+
+/* ── Kbd ── */
+kbd{background:#e2e8f0;border:1px solid #cbd5e1;border-radius:4px;padding:2px 7px;font-size:12px;font-family:monospace;white-space:nowrap}
+
+/* ── Footer ── */
+footer{text-align:center;font-size:12px;color:var(--muted);margin-top:40px;padding-bottom:20px}
+footer a{color:var(--accent);text-decoration:none}
+
+[id]{scroll-margin-top:24px}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════ HEADER ══════════════════════ -->
+<div id="page-header">
+  <h1>SAP HANA <span>Full Analysis Report Generator</span></h1>
+  <div class="subtitle">hana_analysis_app_v6.02.py &nbsp;·&nbsp; v6.02 &nbsp;·&nbsp; User Guide</div>
+  <div class="meta-row">
+    <span><b>Developer:</b> Ernesto Espindola — ernesto.espindola@sap.com</span>
+    <span><b>Team:</b> RDE LAC</span>
+    <span><b>Date:</b> 2026-08-21</span>
+    <span><b>Model:</b> claude-sonnet-latest (via SAP AI proxy)</span>
+  </div>
+</div>
+
+<div class="wrapper">
+
+<!-- ═══════════════════ TOC ══════════════════════ -->
+<nav id="toc">
+  <h2>Contents</h2>
+  <ol>
+    <li><a href="#overview">Overview</a></li>
+    <li><a href="#architecture">Architecture</a></li>
+    <li><a href="#requirements">System Requirements</a></li>
+    <li><a href="#installation">Installation</a></li>
+    <li><a href="#directory">Directory Structure</a></li>
+    <li><a href="#config">Configuration (settings.json)</a></li>
+    <li><a href="#usage">Using the App</a></li>
+    <li><a href="#report">Generated HTML Report</a></li>
+    <li><a href="#pptx">PowerPoint Export</a></li>
+    <li><a href="#supportfiles">Supporting Files</a></li>
+    <li><a href="#limits">File Size &amp; Token Limits</a></li>
+    <li><a href="#troubleshoot">Troubleshooting</a></li>
+  </ol>
+</nav>
+
+<!-- ═══════════════════ OVERVIEW ══════════════════════ -->
+<section id="overview">
+  <h2><span class="icon">📋</span> Overview</h2>
+  <div class="section-desc">What the app does and who it is for.</div>
+  <p>
+    The <strong>SAP HANA Full Analysis Report Generator</strong> is a Windows desktop application
+    that reads a raw HANA Health Check <code>.txt</code> output file and uses the
+    <strong>Claude AI (Anthropic SDK)</strong> via the SAP AI proxy to produce a comprehensive,
+    professionally styled HTML analysis report — and optionally a PowerPoint presentation.
+  </p>
+  <br/>
+  <p>
+    The app is aimed at SAP ECS / RDE DBAs and engagement leads who perform regular HANA Health
+    Check reviews and need to produce a polished, customer-ready deliverable quickly.
+  </p>
+  <br/>
+  <div class="feat-grid">
+    <div class="feat-card">
+      <div class="feat-icon">🤖</div>
+      <h4>AI-Powered Analysis</h4>
+      <p>Sends the HANA Health Check data through a structured prompt template to Claude and streams back a full HTML report in real time.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">📄</div>
+      <h4>Rich HTML Report</h4>
+      <p>The output is a standalone, self-contained HTML file with SAP branding, section navigation, executive overview, action plan cards, memory/disk gauges, and a glossary.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">📊</div>
+      <h4>PowerPoint Export</h4>
+      <p>Extracts 4 key sections from the HTML report into a PowerPoint presentation styled to match the SAP 360 Caretaker Engagement Review template.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🔍</div>
+      <h4>Dynamic Mini-Check Discovery</h4>
+      <p>Automatically detects all mini-check sections present in the health check input and injects them into the prompt — no manual configuration needed.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🌊</div>
+      <h4>Streaming Generation</h4>
+      <p>Uses the Anthropic streaming API. The progress bar and log update token-by-token as the report is built, with live cancel support.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🔒</div>
+      <h4>SAP AI Proxy</h4>
+      <p>Connects to Claude through the SAP internal AI proxy (localhost:6655). Your SAP AI token is read from <code>settings.json</code> — never hard-coded.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ ARCHITECTURE ══════════════════════ -->
+<section id="architecture">
+  <h2><span class="icon">🏗️</span> Architecture</h2>
+  <div class="section-desc">How the app is structured internally.</div>
+  <table class="dtable">
+    <thead><tr><th>Layer</th><th>Technology</th><th>Role</th></tr></thead>
+    <tbody>
+      <tr><td><strong>UI</strong></td><td>Python <code>tkinter</code> (stdlib)</td><td>Desktop GUI — file picker, preview, progress bar, log, action buttons</td></tr>
+      <tr><td><strong>AI client</strong></td><td><code>anthropic</code> SDK (pip)</td><td>Calls Claude via streaming messages API through the SAP AI proxy</td></tr>
+      <tr><td><strong>Proxy</strong></td><td>SAP AI proxy on <code>localhost:6655</code></td><td>Authenticates requests to Anthropic using your SAP AI token</td></tr>
+      <tr><td><strong>Model</strong></td><td><code>claude-sonnet-latest</code> (configurable)</td><td>Reads health check data + prompt template → streams back full HTML report</td></tr>
+      <tr><td><strong>PPTX export</strong></td><td><code>python-pptx</code> (pip, optional)</td><td>Parses the generated HTML, extracts 4 sections, builds a SAP-branded PPTX</td></tr>
+      <tr><td><strong>Report viewer</strong></td><td>Microsoft Edge (fixed path)</td><td>Opens the generated HTML report in Edge via <em>Open in Edge</em> button</td></tr>
+      <tr><td><strong>Logo display</strong></td><td><code>Pillow</code> (pip, optional)</td><td>Renders SAP_LOGO.png in the app header. Falls back to tk.PhotoImage if absent.</td></tr>
+    </tbody>
+  </table>
+  <br/>
+  <div class="callout callout-info">
+    <span class="ico">ℹ️</span>
+    <div>The app reads <code>%USERPROFILE%\.claude\settings.json</code> at startup to load the proxy URL, auth token, and model name. The SAP AI proxy must be running on your workstation before you click Generate.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════ REQUIREMENTS ══════════════════════ -->
+<section id="requirements">
+  <h2><span class="icon">✅</span> System Requirements</h2>
+  <div class="section-desc">What you need before installing.</div>
+  <table class="dtable">
+    <thead><tr><th>Component</th><th>Requirement</th><th>Status</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Python</strong></td>
+        <td>3.10 or later, 64-bit</td>
+        <td><span class="badge badge-req">Required</span></td>
+        <td>Must have <code>tkinter</code> included (standard with official python.org builds). Download: <code>python.org/downloads</code></td>
+      </tr>
+      <tr>
+        <td><strong>anthropic</strong></td>
+        <td>Latest stable</td>
+        <td><span class="badge badge-pip">pip install</span></td>
+        <td>The Anthropic Python SDK. Installed automatically by the installer.</td>
+      </tr>
+      <tr>
+        <td><strong>python-pptx</strong></td>
+        <td>Any recent version</td>
+        <td><span class="badge badge-opt">Optional</span></td>
+        <td>Required only for PowerPoint export. The app works fully without it — the Export button is hidden if not installed.</td>
+      </tr>
+      <tr>
+        <td><strong>Pillow</strong></td>
+        <td>Any recent version</td>
+        <td><span class="badge badge-opt">Optional</span></td>
+        <td>Renders the SAP logo in the app header at full quality. Falls back gracefully if missing.</td>
+      </tr>
+      <tr>
+        <td><strong>SAP AI Proxy</strong></td>
+        <td>Running on <code>localhost:6655</code></td>
+        <td><span class="badge badge-req">Required</span></td>
+        <td>Must be running on your workstation before generating a report. Contact the ECS AI team for setup instructions.</td>
+      </tr>
+      <tr>
+        <td><strong>SAP AI Token</strong></td>
+        <td>UUID format auth token</td>
+        <td><span class="badge badge-req">Required</span></td>
+        <td>Stored in <code>%USERPROFILE%\.claude\settings.json</code>. Contact your team lead or the ECS AI team to obtain one.</td>
+      </tr>
+      <tr>
+        <td><strong>Microsoft Edge</strong></td>
+        <td>Default install path</td>
+        <td><span class="badge badge-req">Required</span></td>
+        <td>Used by the <em>Open in Edge</em> button. Expected at <code>C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe</code></td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ═══════════════════ INSTALLATION ══════════════════════ -->
+<section id="installation">
+  <h2><span class="icon">📥</span> Installation</h2>
+  <div class="section-desc">Step-by-step setup using the provided installer.</div>
+
+  <ol class="steps">
+    <li>
+      <div class="step-body">
+        <strong>Verify Python 3.10+ 64-bit is installed</strong>
+        <span>Open a command prompt and run <code>python --version</code>. If not installed, download and install the latest 64-bit Python from <code>python.org/downloads</code>, checking <em>"Add Python to PATH"</em>.</span>
+      </div>
+    </li>
+    <li>
+      <div class="step-body">
+        <strong>Ensure all source files are in the <code>HANA_Analysis_report_generator\</code> folder</strong>
+        <span>The installer expects to find <code>hana_analysis_app_v6.02.py</code> in the same folder. The template and release files are looked up in the parent working directory automatically.</span>
+      </div>
+    </li>
+    <li>
+      <div class="step-body">
+        <strong>Double-click <code>install_hana_analysis_app_v6.02.bat</code></strong>
+        <span>Run as Administrator for best results (required if installing to <code>C:\Program Files</code> or similar protected paths).</span>
+      </div>
+    </li>
+    <li>
+      <div class="step-body">
+        <strong>Enter the working directory path</strong>
+        <span>Press Enter to accept the default <code>C:\HANA_Analysis_App</code> or type a custom path. This is where your Health Check input files and output reports will live.</span>
+      </div>
+    </li>
+    <li>
+      <div class="step-body">
+        <strong>Enter your SAP AI token</strong>
+        <span>Paste your UUID-format SAP AI auth token. If you do not have one yet, leave blank — you can add it to <code>settings.json</code> later. The installer also asks for the proxy URL (default: <code>http://localhost:6655/anthropic/</code>).</span>
+      </div>
+    </li>
+    <li>
+      <div class="step-body">
+        <strong>Wait for pip installs and file copy</strong>
+        <span>The installer installs <code>anthropic</code> (required), <code>python-pptx</code> (optional), and <code>Pillow</code> (optional), then copies all files, patches the path variables, and writes <code>settings.json</code>.</span>
+      </div>
+    </li>
+    <li>
+      <div class="step-body">
+        <strong>Launch from the Desktop shortcut</strong>
+        <span>Double-click <em>"HANA Analysis App v6.02"</em> on the Desktop, or run <code>run_hana_analysis_app_v6.02.bat</code> from the working directory.</span>
+      </div>
+    </li>
+  </ol>
+
+  <h3>Manual installation (no installer)</h3>
+  <ol style="padding-left:22px;font-size:14px;line-height:2.2">
+    <li>Install packages: <code>pip install anthropic python-pptx Pillow</code></li>
+    <li>Edit lines 37–43 of <code>hana_analysis_app_v6.02.py</code> — set <code>WORKING_DIR</code> and <code>SETTINGS_FILE</code> to your paths</li>
+    <li>Create <code>%USERPROFILE%\.claude\settings.json</code> (see Configuration section)</li>
+    <li>Run: <code>python hana_analysis_app_v6.02.py</code></li>
+  </ol>
+</section>
+
+<!-- ═══════════════════ DIRECTORY ══════════════════════ -->
+<section id="directory">
+  <h2><span class="icon">📂</span> Directory Structure</h2>
+  <div class="section-desc">Files and folders created by the installer.</div>
+  <div class="tree">
+<span class="folder">C:\HANA_Analysis_App\</span>  (your chosen working directory)<br>
+│<br>
+├── <span class="req">HANA_HealthCheck_Prompt_Template.md</span>   <span class="comment">← AI prompt template (required)</span><br>
+├── <span class="req">HANA_latest_release.txt</span>               <span class="comment">← HANA version reference (required)</span><br>
+├── <span class="opt">SAP_LOGO.png</span>                          <span class="comment">← SAP logo for reports + app header (optional)</span><br>
+├── run_hana_analysis_app_v6.02.bat           <span class="comment">← launcher script</span><br>
+│<br>
+├── <span class="folder">HANA_Analysis_report_generator\</span><br>
+│   ├── <span class="req">hana_analysis_app_v6.02.py</span>        <span class="comment">← main application (required)</span><br>
+│   ├── HANA_Analysis_App_v6.02_Guide.html    <span class="comment">← this documentation</span><br>
+│   └── <span class="folder">Previous versions\</span>             <span class="comment">← archived older app versions</span><br>
+│<br>
+├── <span class="folder">HANA Health Check Reports\</span>         <span class="comment">← place .txt health check files here</span><br>
+│   └── HP4_healthcheck_20260821.txt<br>
+│<br>
+└── <span class="folder">Results\</span>                           <span class="comment">← generated HTML reports saved here</span><br>
+    └── <span class="gen">HP4_HANA_Analysis_Report_20260821_143022.html</span><br>
+<br>
+<span class="folder">%USERPROFILE%\.claude\</span>                  <span class="comment">← Claude / AI config folder</span><br>
+└── <span class="req">settings.json</span>                         <span class="comment">← SAP AI proxy URL + token + model</span>
+  </div>
+</section>
+
+<!-- ═══════════════════ CONFIG ══════════════════════ -->
+<section id="config">
+  <h2><span class="icon">⚙️</span> Configuration</h2>
+  <div class="section-desc">The settings.json file that controls AI proxy access.</div>
+
+  <p>The app reads <code>%USERPROFILE%\.claude\settings.json</code> at startup. The installer creates this file automatically. Its structure:</p>
+  <pre>{
+  "env": {
+    "ANTHROPIC_BASE_URL":   "http://localhost:6655/anthropic/",
+    "ANTHROPIC_AUTH_TOKEN": "your-sap-ai-token-here",
+    "ANTHROPIC_MODEL":      "claude-sonnet-latest"
+  }
+}</pre>
+
+  <table class="dtable">
+    <thead><tr><th>Key</th><th>Default</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>ANTHROPIC_BASE_URL</code></td><td><code>http://localhost:6655/anthropic/</code></td><td>URL of the SAP AI proxy running on your workstation. Change only if your proxy uses a different port.</td></tr>
+      <tr><td><code>ANTHROPIC_AUTH_TOKEN</code></td><td>(your token)</td><td>Your SAP AI authentication token in UUID format. Keep this secret.</td></tr>
+      <tr><td><code>ANTHROPIC_MODEL</code></td><td><code>claude-sonnet-latest</code></td><td>The Claude model to use. Shown in the app header. Contact the AI team before changing.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-warn">
+    <span class="ico">⚠️</span>
+    <div>If <code>settings.json</code> is missing or the token is the placeholder <code>ENTER-YOUR-SAP-AI-TOKEN-HERE</code>, all generation attempts will fail with an authentication error. Replace it with your real SAP AI token.</div>
+  </div>
+
+  <h3>Hardcoded paths in the .py file (lines 37–43)</h3>
+  <p>The installer patches these automatically. If you move the working directory later, update them manually:</p>
+  <pre>WORKING_DIR   = Path(r"C:\HANA_Analysis_App")
+TEMPLATE_FILE = WORKING_DIR / "HANA_HealthCheck_Prompt_Template.md"
+RELEASE_FILE  = WORKING_DIR / "HANA_latest_release.txt"
+OUTPUT_DIR    = WORKING_DIR / "Results"
+LOGO_PATH     = WORKING_DIR / "SAP_LOGO.png"
+EDGE_PATH     = r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
+SETTINGS_FILE = Path(r"C:\Users\YourUser\.claude\settings.json")</pre>
+</section>
+
+<!-- ═══════════════════ USAGE ══════════════════════ -->
+<section id="usage">
+  <h2><span class="icon">▶️</span> Using the App</h2>
+  <div class="section-desc">Step-by-step workflow for generating a report.</div>
+
+  <div class="callout callout-warn">
+    <span class="ico">⚠️</span>
+    <div><strong>Before you start:</strong> ensure the SAP AI proxy is running on <code>localhost:6655</code>. Without it, all generation attempts fail immediately.</div>
+  </div>
+  <br/>
+  <ol class="steps">
+    <li>
+      <div class="step-body">
+        <strong>Launch the app</strong>
+        <p>Double-click <em>"HANA Analysis App v6.02"</em> on the Desktop or run <code>run_hana_analysis_app_v6.02.bat</code>. The Tkinter window opens with the SAP-branded header showing the active model.</p>
+      </div>
+    </li>
+    <li>
+      <div class="step-body">
+        <strong>Browse for the Health Check file</strong>
+        <p>Click <strong>Browse...</strong>. The file picker opens in <code>HANA Health Check Reports\</code>. Select the <code>.txt</code> output from the HANA Health Check SQL execution. The file opens in the preview panel (first 60 lines shown). The size badge shows KB and approximate token count.</p>
+      </div>
+    </li>
+    <li>
+      <div class="step-body">
+        <strong>Verify file size</strong>
+        <p>The badge turns orange if the file is above 75% of the 2,500 KB limit. If the file exceeds 2,500 KB the Generate button is disabled and a warning appears — trim the input file before proceeding.</p>
+      </div>
+    </li>
+    <li>
+      <div class="step-body">
+        <strong>Click Generate Full Analysis Report</strong>
+        <p>The app builds the prompt (template + release info + health check data), detects all mini-check sections, and starts the streaming API call. The progress bar fills as tokens stream in. The log panel shows real-time status messages.</p>
+      </div>
+    </li>
+    <li>
+      <div class="step-body">
+        <strong>Wait for completion</strong>
+        <p>Generation typically takes 2–5 minutes depending on file size and model load. A typical report is 40,000–64,000 output tokens. You can click <strong>Cancel</strong> at any time to abort.</p>
+      </div>
+    </li>
+    <li>
+      <div class="step-body">
+        <strong>Open in Edge</strong>
+        <p>Click <strong>Open in Edge</strong> (green button). The report opens in Microsoft Edge. The HTML file is saved in <code>Results\</code> with the pattern <code>SID_HANA_Analysis_Report_YYYYMMDD_HHMMSS.html</code>.</p>
+      </div>
+    </li>
+    <li>
+      <div class="step-body">
+        <strong>(Optional) Export to PowerPoint</strong>
+        <p>If <code>python-pptx</code> is installed, click <strong>Export to PowerPoint</strong> (purple button, visible after generation). The PPTX is saved alongside the HTML in <code>Results\</code>.</p>
+      </div>
+    </li>
+  </ol>
+
+  <h3>Buttons reference</h3>
+  <table class="dtable">
+    <thead><tr><th>Button</th><th>Color</th><th>When active</th><th>Action</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Browse...</strong></td><td>Blue</td><td>Always</td><td>Opens file picker for Health Check .txt input</td></tr>
+      <tr><td><strong>Generate Full Analysis Report</strong></td><td>Blue</td><td>After valid file selected</td><td>Starts streaming API call and report generation</td></tr>
+      <tr><td><strong>Cancel</strong></td><td>Red</td><td>During generation</td><td>Signals the streaming thread to stop</td></tr>
+      <tr><td><strong>Open in Edge</strong></td><td>Green</td><td>After successful generation</td><td>Opens the last generated HTML in Microsoft Edge</td></tr>
+      <tr><td><strong>Export to PowerPoint</strong></td><td>Purple</td><td>After generation (pptx installed)</td><td>Builds a SAP-branded PPTX from the HTML report</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ═══════════════════ REPORT ══════════════════════ -->
+<section id="report">
+  <h2><span class="icon">📄</span> Generated HTML Report</h2>
+  <div class="section-desc">Sections included in every generated report.</div>
+
+  <p>The report is a self-contained HTML file with a navigation sidebar, SAP logo, and a consistent section layout. Each section has a status pill (Critical / Warning / OK / Informational) and collapsible body.</p>
+  <br/>
+  <div class="report-grid">
+    <div class="report-card">
+      <div class="rc-badge rc-critical">Executive Overview</div> <span class="pptx-badge">PPTX</span>
+      <h4>Executive Overview</h4>
+      <p>Summary KPI cards (Critical / Warning / Monthly / OK), business impact statements, and top action items for leadership.</p>
+    </div>
+    <div class="report-card">
+      <div class="rc-badge rc-blue">Environment</div> <span class="pptx-badge">PPTX</span>
+      <h4>Environment Summary / Overview</h4>
+      <p>SID, version, host count, memory, disk, system replication status — rendered as env-item key/value grid and utilisation bars.</p>
+    </div>
+    <div class="report-card">
+      <div class="rc-badge rc-critical">Memory</div>
+      <h4>Memory Analysis</h4>
+      <p>Heap allocations, top memory consumers, OOM history, recommended parameters.</p>
+    </div>
+    <div class="report-card">
+      <div class="rc-badge rc-warn">Backups</div>
+      <h4>Backup Status</h4>
+      <p>Last full backup age, backup run failures, log backup configuration, RPO risk.</p>
+    </div>
+    <div class="report-card">
+      <div class="rc-badge rc-warn">Parameters</div>
+      <h4>Configuration Parameters</h4>
+      <p>Non-default parameters compared against ECS standards, with risk classification and SAP Note references.</p>
+    </div>
+    <div class="report-card">
+      <div class="rc-badge rc-critical">Performance</div>
+      <h4>Expensive Statements / SQL</h4>
+      <p>Top SQL statements by CPU and memory, lock waits, query plan issues.</p>
+    </div>
+    <div class="report-card">
+      <div class="rc-badge rc-ok">Disk</div>
+      <h4>Disk / Storage</h4>
+      <p>Data volume usage, log volume, disk partition layout, growth trends.</p>
+    </div>
+    <div class="report-card">
+      <div class="rc-badge rc-warn">Tables</div>
+      <h4>Table Analysis</h4>
+      <p>Largest tables, top-growing tables (size and record count history), delta merge backlog, partitioning.</p>
+    </div>
+    <div class="report-card">
+      <div class="rc-badge rc-warn">Alerts</div>
+      <h4>Statistics Server Alerts</h4>
+      <p>Frequent and historical alert patterns from the embedded / standalone statistics server.</p>
+    </div>
+    <div class="report-card">
+      <div class="rc-badge rc-blue">Replication</div>
+      <h4>System Replication</h4>
+      <p>HSR mode, sync status, replication lag, secondary site health.</p>
+    </div>
+    <div class="report-card">
+      <div class="rc-badge rc-critical">Risks</div> <span class="pptx-badge">PPTX</span>
+      <h4>Additional Risks</h4>
+      <p>Any findings that do not fit the standard sections — unusual configurations, emerging risks, unsupported features.</p>
+    </div>
+    <div class="report-card">
+      <div class="rc-badge rc-blue">Actions</div> <span class="pptx-badge">PPTX</span>
+      <h4>Consolidated Action Plans</h4>
+      <p>All P1/P2/P3 action items consolidated, with owner tags, effort estimates, and risk-prevention labels.</p>
+    </div>
+    <div class="report-card">
+      <div class="rc-badge rc-blue">Minichecks</div>
+      <h4>Mini-Check Sections (dynamic)</h4>
+      <p>All mini-check result sections found in the health check input are dynamically discovered and included as individual report sections.</p>
+    </div>
+  </div>
+
+  <br/>
+  <div class="callout callout-info">
+    <span class="ico">ℹ️</span>
+    <div>Report files are named <code>SID_HANA_Analysis_Report_YYYYMMDD_HHMMSS.html</code> and saved to the <code>Results\</code> folder. Each generation creates a new file — previous reports are never overwritten.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════ PPTX ══════════════════════ -->
+<section id="pptx">
+  <h2><span class="icon">📊</span> PowerPoint Export</h2>
+  <div class="section-desc">Extracting key sections into a SAP-branded PPTX.</div>
+
+  <p>
+    After a report is generated, click <strong>Export to PowerPoint</strong>. The app parses the HTML
+    and builds a PowerPoint file styled to match the SAP 360 Caretaker Engagement Review template.
+  </p>
+  <br/>
+  <div class="callout callout-info">
+    <span class="ico">ℹ️</span>
+    <div>Only <strong>4 sections</strong> are included in the PPTX — the ones marked <span class="pptx-badge" style="display:inline;font-size:12px">PPTX</span> above: <strong>Executive Overview, Environment Summary, Additional Risks,</strong> and <strong>Consolidated Action Plans</strong>. The full detail is in the HTML report.</div>
+  </div>
+  <br/>
+  <table class="dtable">
+    <thead><tr><th>PPTX Slide</th><th>Content</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Title slide</strong></td><td>System SID, generated date, SAP logo, version</td></tr>
+      <tr><td><strong>Executive Overview</strong></td><td>KPI cards with critical/warning/ok counts and business impact</td></tr>
+      <tr><td><strong>Environment Summary</strong></td><td>Key/value env-item pairs, utilisation bars</td></tr>
+      <tr><td><strong>Additional Risks</strong></td><td>Risk bullets and descriptions</td></tr>
+      <tr><td><strong>Consolidated Action Plans</strong></td><td>P1/P2/P3 action items with owner and effort tags</td></tr>
+    </tbody>
+  </table>
+  <br/>
+  <p>The PPTX is saved alongside the HTML: <code>SID_HANA_Analysis_Report_YYYYMMDD_HHMMSS.pptx</code></p>
+  <br/>
+  <div class="callout callout-tip">
+    <span class="ico">💡</span>
+    <div>To use the PPTX export, <code>python-pptx</code> must be installed. If the Export button shows "python-pptx not installed", run <code>pip install python-pptx</code> in a command prompt and restart the app.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════ SUPPORTING FILES ══════════════════════ -->
+<section id="supportfiles">
+  <h2><span class="icon">📁</span> Supporting Files</h2>
+  <div class="section-desc">Files the app reads at runtime — keep them up to date.</div>
+
+  <table class="dtable">
+    <thead><tr><th>File</th><th>Required</th><th>Purpose</th><th>How to update</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>HANA_HealthCheck_Prompt_Template.md</code></td>
+        <td><span class="badge badge-req">Required</span></td>
+        <td>The master AI prompt template. Defines the report structure, section order, CSS classes, and instructions for Claude. Updating this file changes the structure and quality of all future reports.</td>
+        <td>Edit the <code>.md</code> file directly. Changes take effect on the next generation — no restart needed.</td>
+      </tr>
+      <tr>
+        <td><code>HANA_latest_release.txt</code></td>
+        <td><span class="badge badge-req">Required</span></td>
+        <td>Contains the current HANA release version table used by Claude to determine if the customer's HANA version is current, behind, or end-of-maintenance.</td>
+        <td>Update periodically from the ECS wiki (pageId 1617468855). A PowerShell script <code>Update-HANARelease.ps1</code> may automate this.</td>
+      </tr>
+      <tr>
+        <td><code>SAP_LOGO.png</code></td>
+        <td><span class="badge badge-opt">Optional</span></td>
+        <td>SAP logo embedded as base64 in every generated HTML report header, and displayed in the app's own header bar.</td>
+        <td>Replace with updated SAP branding as needed. PNG format only.</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ═══════════════════ LIMITS ══════════════════════ -->
+<section id="limits">
+  <h2><span class="icon">📏</span> File Size &amp; Token Limits</h2>
+  <div class="section-desc">Understanding input and output constraints.</div>
+
+  <table class="dtable">
+    <thead><tr><th>Limit</th><th>Value</th><th>Behaviour when exceeded</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Max input file size</strong></td><td>2,500 KB</td><td>Generate button is disabled; warning dialog appears. Trim the health check file before retrying.</td></tr>
+      <tr><td><strong>Warning threshold</strong></td><td>1,875 KB (75%)</td><td>Size badge turns orange. Generation is still allowed.</td></tr>
+      <tr><td><strong>Max output tokens</strong></td><td>64,000 tokens</td><td>Report may be truncated if Claude reaches the limit mid-section. Reduce prompt complexity or input size.</td></tr>
+      <tr><td><strong>Expected output tokens</strong></td><td>~40,000 tokens</td><td>Typical full report. Generation takes 2–5 minutes at this size.</td></tr>
+      <tr><td><strong>File preview</strong></td><td>60 lines</td><td>The preview panel shows only the first 60 lines — the full file is still processed.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Tips for large files</h3>
+  <ul style="padding-left:22px;font-size:14px;line-height:2.2">
+    <li>Remove <code>-- comment</code> header blocks from mini-check output if they are very long</li>
+    <li>Trim redundant repeated rows (e.g. thousands of identical lock wait entries)</li>
+    <li>Split a combined SystemDB + Tenant health check into separate files and generate two reports</li>
+  </ul>
+</section>
+
+<!-- ═══════════════════ TROUBLESHOOT ══════════════════════ -->
+<section id="troubleshoot">
+  <h2><span class="icon">🔧</span> Troubleshooting</h2>
+  <div class="section-desc">Common issues and how to resolve them.</div>
+
+  <h3>Generation fails immediately with "Authentication error" or 401</h3>
+  <div class="callout callout-warn">
+    <span class="ico">⚠️</span>
+    <div>
+      <ul style="padding-left:20px;line-height:2">
+        <li>Open <code>%USERPROFILE%\.claude\settings.json</code> and verify <code>ANTHROPIC_AUTH_TOKEN</code> is your real token (not the placeholder)</li>
+        <li>Confirm the SAP AI proxy is running on <code>localhost:6655</code></li>
+        <li>Try <code>curl http://localhost:6655/anthropic/</code> in a command prompt — you should get a response (not a connection refused)</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>App window does not open / tkinter error</h3>
+  <div class="callout callout-warn">
+    <span class="ico">⚠️</span>
+    <div>
+      <code>tkinter</code> is missing from the Python installation. Reinstall Python from <code>python.org</code> ensuring the <em>"tcl/tk and IDLE"</em> optional component is checked.
+      <pre>python -c "import tkinter; print('OK')"</pre>
+      If this prints an error, tkinter is not available.
+    </div>
+  </div>
+
+  <h3>ImportError: No module named 'anthropic'</h3>
+  <div class="callout callout-warn">
+    <span class="ico">⚠️</span>
+    <div>
+      Run the installer again, or install manually:
+      <pre>pip install anthropic</pre>
+      Ensure you are installing into the same Python that runs the script (check <code>where python</code>).
+    </div>
+  </div>
+
+  <h3>Report generation starts but stops partway / truncated output</h3>
+  <div class="callout callout-info">
+    <span class="ico">ℹ️</span>
+    <div>
+      <ul style="padding-left:20px;line-height:2">
+        <li>The input file may be close to the 2,500 KB limit, causing the prompt to exceed the model's context window</li>
+        <li>The output may have hit the 64,000-token limit — check the log for a token count near that threshold</li>
+        <li>The SAP AI proxy may have timed out — restart the proxy and try again</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Export to PowerPoint button is not visible</h3>
+  <div class="callout callout-info">
+    <span class="ico">ℹ️</span>
+    <div>
+      The Export button is currently hidden in the UI (it exists but is not packed). To use PPTX export, run the export function directly in Python or contact the developer to re-enable the button in a future version.
+    </div>
+  </div>
+
+  <h3>Open in Edge fails / browser does not open</h3>
+  <div class="callout callout-warn">
+    <span class="ico">⚠️</span>
+    <div>
+      The app uses a hardcoded Edge path:
+      <pre>C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe</pre>
+      If Edge is installed in a different location, edit <code>EDGE_PATH</code> in the <code>.py</code> file (line 42). Alternatively, open the HTML report directly from <code>Results\</code> in any browser.
+    </div>
+  </div>
+
+  <h3>SAP logo not showing in app header</h3>
+  <div class="callout callout-info">
+    <span class="ico">ℹ️</span>
+    <div>
+      Either <code>SAP_LOGO.png</code> is missing from the working directory, or <code>Pillow</code> is not installed. Install Pillow: <code>pip install Pillow</code>, or copy <code>SAP_LOGO.png</code> to <code>WORKING_DIR</code>. The app header will show a warning text in its place — this does not affect report generation.
+    </div>
+  </div>
+
+  <h3>HANA_HealthCheck_Prompt_Template.md not found</h3>
+  <div class="callout callout-warn">
+    <span class="ico">⚠️</span>
+    <div>
+      The template file must exist at <code>WORKING_DIR / "HANA_HealthCheck_Prompt_Template.md"</code>. If it is missing, generation will fail. Copy the template from the source folder or contact the RDE LAC team.
+    </div>
+  </div>
+</section>
+
+</div><!-- /.wrapper -->
+
+<footer>
+  SAP HANA Full Analysis Report Generator v6.02 &nbsp;·&nbsp;
+  Developer: Ernesto Espindola &nbsp;·&nbsp;
+  Team: RDE LAC &nbsp;·&nbsp;
+  <a href="mailto:ernesto.espindola@sap.com">ernesto.espindola@sap.com</a>
+  &nbsp;·&nbsp; Generated 2026-08-21
+</footer>
+
+</body>
+</html>
