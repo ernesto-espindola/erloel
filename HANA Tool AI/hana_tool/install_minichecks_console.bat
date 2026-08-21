@@ -36,7 +36,7 @@ python -c "import struct; assert struct.calcsize('P')*8 == 64, 'not 64-bit'" >nu
 if errorlevel 1 (
     echo.
     echo  ERROR: Python found but it is NOT 64-bit.
-    echo  The bundled hdbcli library (pyhdbcli.pyd) requires 64-bit Python.
+    echo  The bundled hdbcli library ^(pyhdbcli.pyd^) requires 64-bit Python.
     echo  Install the 64-bit Python distribution and retry.
     echo.
     pause
