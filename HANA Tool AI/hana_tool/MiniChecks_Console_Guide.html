@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SAP HANA Mini Checks Console v2.0 — Documentation</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f0f2f5;--surf:#ffffff;--surf2:#f5f7fa;--border:#d1d5db;
+  --accent:#0070d2;--success:#16a34a;--warn:#b45309;--error:#dc2626;
+  --text:#1e293b;--muted:#64748b;--code-bg:#0d1b2e;--code-fg:#e2eaf5;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;font-size:15px;line-height:1.65}
+
+/* ── Header ── */
+#page-header{
+  background:linear-gradient(135deg,#0d1f35 0%,#1e3a5f 60%,#0070d2 100%);
+  color:#fff;padding:48px 40px 40px;
+}
+#page-header h1{font-size:28px;font-weight:700;letter-spacing:.5px;margin-bottom:6px}
+#page-header h1 span{color:#7ab8f5}
+#page-header .subtitle{font-size:14px;color:#b0c8e8;margin-bottom:18px}
+.meta-row{display:flex;flex-wrap:wrap;gap:24px;font-size:13px;color:#8aaac8}
+.meta-row span{display:flex;align-items:center;gap:6px}
+.meta-row b{color:#daeaf8}
+
+/* ── Layout ── */
+.wrapper{max-width:1060px;margin:0 auto;padding:32px 24px 64px}
+
+/* ── Nav ── */
+#toc{background:var(--surf);border:1px solid var(--border);border-radius:10px;padding:24px 28px;margin-bottom:32px}
+#toc h2{font-size:14px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:14px}
+#toc ol{padding-left:20px;display:grid;grid-template-columns:1fr 1fr;gap:4px 32px}
+#toc li{font-size:13.5px}
+#toc a{color:var(--accent);text-decoration:none}
+#toc a:hover{text-decoration:underline}
+
+/* ── Sections ── */
+section{background:var(--surf);border:1px solid var(--border);border-radius:10px;padding:32px 36px;margin-bottom:24px}
+section h2{font-size:20px;font-weight:700;color:var(--accent);margin-bottom:6px;display:flex;align-items:center;gap:10px}
+section h2 .icon{font-size:22px}
+.section-desc{font-size:13px;color:var(--muted);margin-bottom:22px;border-bottom:1px solid var(--border);padding-bottom:14px}
+section h3{font-size:15px;font-weight:600;color:var(--text);margin:22px 0 10px}
+
+/* ── Callouts ── */
+.callout{border-radius:7px;padding:14px 18px;margin:14px 0;font-size:13.5px;display:flex;gap:12px;align-items:flex-start}
+.callout .ico{font-size:18px;flex-shrink:0;margin-top:1px}
+.callout-warn{background:#fffbeb;border:1px solid #fde68a;color:#92400e}
+.callout-info{background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af}
+.callout-ok{background:#f0fdf4;border:1px solid #bbf7d0;color:#14532d}
+.callout-tip{background:#fdf4ff;border:1px solid #e9d5ff;color:#581c87}
+
+/* ── Tables ── */
+.dtable{width:100%;border-collapse:collapse;font-size:13.5px;margin:12px 0}
+.dtable th{background:var(--surf2);color:var(--text);padding:8px 14px;text-align:left;font-weight:600;border-bottom:2px solid var(--border);white-space:nowrap}
+.dtable td{padding:7px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+.dtable tr:last-child td{border-bottom:none}
+.dtable tr:nth-child(even) td{background:rgba(0,0,0,.018)}
+.dtable td code{background:rgba(0,112,210,.08);padding:1px 5px;border-radius:3px;font-size:12.5px}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.badge-req{background:#fee2e2;color:#991b1b}
+.badge-opt{background:#fef3c7;color:#92400e}
+.badge-auto{background:#d1fae5;color:#065f46}
+
+/* ── Step list ── */
+.steps{counter-reset:step;padding:0;list-style:none}
+.steps li{counter-increment:step;display:flex;gap:16px;margin-bottom:18px;align-items:flex-start}
+.steps li::before{content:counter(step);background:var(--accent);color:#fff;font-size:12px;font-weight:700;
+  min-width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+.steps li .step-body{flex:1}
+.steps li .step-body strong{display:block;margin-bottom:3px;font-size:14.5px}
+.steps li .step-body span{font-size:13.5px;color:var(--muted)}
+
+/* ── Code blocks ── */
+pre{background:var(--code-bg);color:var(--code-fg);border-radius:7px;padding:16px 18px;font-size:13px;
+  font-family:'Cascadia Code','Consolas',monospace;overflow-x:auto;margin:10px 0}
+code{background:rgba(0,112,210,.08);padding:1px 6px;border-radius:3px;font-size:13px;font-family:'Cascadia Code','Consolas',monospace}
+
+/* ── Feature cards ── */
+.feat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-top:12px}
+.feat-card{background:var(--surf2);border:1px solid var(--border);border-radius:8px;padding:18px 20px}
+.feat-card .feat-icon{font-size:22px;margin-bottom:8px}
+.feat-card h4{font-size:14px;font-weight:600;margin-bottom:6px}
+.feat-card p{font-size:13px;color:var(--muted);line-height:1.5}
+
+/* ── Kbd ── */
+kbd{background:#e2e8f0;border:1px solid #cbd5e1;border-radius:4px;padding:2px 7px;font-size:12px;font-family:monospace;white-space:nowrap}
+
+/* ── Dir tree ── */
+.tree{background:var(--code-bg);color:var(--code-fg);border-radius:7px;padding:16px 18px;font-size:13px;
+  font-family:'Cascadia Code','Consolas',monospace;line-height:1.8}
+.tree .folder{color:#7ab8f5}
+.tree .file{color:#a5d6a7}
+.tree .comment{color:#546e7a;font-style:italic}
+.tree .req{color:#ef9a9a}
+.tree .opt{color:#ffe082}
+
+/* ── Script list ── */
+.script-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:6px;margin:10px 0}
+.script-tag{background:var(--surf2);border:1px solid var(--border);border-radius:5px;padding:6px 12px;
+  font-size:12px;color:var(--text);display:flex;flex-direction:column;gap:2px}
+.script-tag .scat{font-size:10px;color:var(--accent);font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+
+/* ── Footer ── */
+footer{text-align:center;font-size:12px;color:var(--muted);margin-top:40px;padding-bottom:20px}
+footer a{color:var(--accent);text-decoration:none}
+
+/* ── anchor offset ── */
+[id]{scroll-margin-top:24px}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════ HEADER -->
+<div id="page-header">
+  <h1>SAP HANA <span>Mini Checks Console</span></h1>
+  <div class="subtitle">minichecks_console_V2.0.py &nbsp;·&nbsp; App version 6.0 &nbsp;·&nbsp; User Guide</div>
+  <div class="meta-row">
+    <span><b>Developer:</b> Ernesto Espindola — ernesto.espindola@sap.com</span>
+    <span><b>Team:</b> RDE LAC</span>
+    <span><b>Date:</b> 2026-08-21</span>
+    <span><b>Runtime port:</b> http://127.0.0.1:5000</span>
+  </div>
+</div>
+
+<div class="wrapper">
+
+<!-- ═══════════════════════════════════════════════════════════ TOC -->
+<nav id="toc">
+  <h2>Contents</h2>
+  <ol>
+    <li><a href="#overview">Overview</a></li>
+    <li><a href="#architecture">Architecture</a></li>
+    <li><a href="#requirements">System Requirements</a></li>
+    <li><a href="#installation">Installation</a></li>
+    <li><a href="#directory">Directory Structure</a></li>
+    <li><a href="#startup">Starting the App</a></li>
+    <li><a href="#connect">Connecting to HANA</a></li>
+    <li><a href="#editor">SQL Editor</a></li>
+    <li><a href="#results">Results Table</a></li>
+    <li><a href="#charts">Chart Tab</a></li>
+    <li><a href="#minichecks">Mini Checks Sidebar</a></li>
+    <li><a href="#bundle">Basic Bundle</a></li>
+    <li><a href="#consolidate">Consolidate Outputs</a></li>
+    <li><a href="#outputs">Output Files</a></li>
+    <li><a href="#scripts">Basic Bundle Script Reference</a></li>
+    <li><a href="#troubleshoot">Troubleshooting</a></li>
+  </ol>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════════ OVERVIEW -->
+<section id="overview">
+  <h2><span class="icon">📋</span> Overview</h2>
+  <div class="section-desc">What the app does and who it is for.</div>
+  <p>
+    The <strong>SAP HANA Mini Checks Console</strong> is a lightweight, browser-based SQL execution
+    environment specifically designed for SAP HANA DBA tasks. It runs as a local Python web server
+    on your Windows workstation and opens automatically in your default browser.
+  </p>
+  <br/>
+  <p>
+    The app combines an ad-hoc SQL editor with a curated library of SAP HANA mini-check scripts and
+    a one-click "Basic Bundle" that runs 35 standard diagnostic queries in sequence and produces a
+    single consolidated output file — ready to attach to a service ticket or review in Excel.
+  </p>
+  <br/>
+  <div class="feat-grid">
+    <div class="feat-card">
+      <div class="feat-icon">⚡</div>
+      <h4>Zero Dependencies on the HANA Host</h4>
+      <p>Connects over the standard hdbcli TCP port (default 30241). No SAP GUI, no HANA Studio, no VPN tunnel beyond network access to the DB port.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🔌</div>
+      <h4>Offline-Ready</h4>
+      <p>The hdbcli driver and Chart.js library are bundled locally. No internet connection is needed after installation.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">📦</div>
+      <h4>Basic Bundle</h4>
+      <p>Runs 35 standard HANA diagnostic mini-check scripts in one click with a live progress bar, skipping any that fail, and downloads a single consolidated .txt output.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">📊</div>
+      <h4>Integrated Charting</h4>
+      <p>Any query result can be visualised as Bar, Line, Pie, Doughnut, Polar Area, or Radar chart — with a Save PNG button.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">📁</div>
+      <h4>Mini Checks Library</h4>
+      <p>A filterable sidebar lists all .sql/.txt files in the mini_checks\ folder. Click a script to load its SQL directly into the editor.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🗂️</div>
+      <h4>Consolidate</h4>
+      <p>After individual runs, select any combination of saved output files and merge them into a single timestamped review document.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ ARCHITECTURE -->
+<section id="architecture">
+  <h2><span class="icon">🏗️</span> Architecture</h2>
+  <div class="section-desc">How the app is structured internally.</div>
+  <p>
+    The app is a single Python file that does two things simultaneously:
+  </p>
+  <br/>
+  <table class="dtable">
+    <thead><tr><th>Layer</th><th>Technology</th><th>Role</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Web server</strong></td><td><code>http.server.ThreadingHTTPServer</code> (stdlib)</td><td>Serves the HTML UI and handles all API requests on <code>127.0.0.1:5000</code></td></tr>
+      <tr><td><strong>UI</strong></td><td>Vanilla HTML / CSS / JavaScript (embedded in the .py file)</td><td>All UI is rendered in your default browser; no framework needed</td></tr>
+      <tr><td><strong>HANA driver</strong></td><td><code>hdbcli.dbapi</code> (bundled in <code>lib\</code>)</td><td>Opens and manages the TCP connection to SAP HANA</td></tr>
+      <tr><td><strong>Chart library</strong></td><td>Chart.js UMD (optional, served from <code>lib\</code>)</td><td>Powers the Chart tab — bar, line, pie, doughnut, polar, radar</td></tr>
+      <tr><td><strong>REST API</strong></td><td>JSON over HTTP (POST / GET)</td><td>Browser calls local endpoints: <code>/api/connect</code>, <code>/api/execute</code>, <code>/api/basic_bundle</code>, etc.</td></tr>
+    </tbody>
+  </table>
+  <br/>
+  <div class="callout callout-info">
+    <span class="ico">ℹ️</span>
+    <div>The server binds exclusively to <code>127.0.0.1</code> (loopback). It is <strong>not reachable from the network</strong> — only from the local machine. Your HANA credentials are kept in memory only for the duration of the session and are never written to disk.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ REQUIREMENTS -->
+<section id="requirements">
+  <h2><span class="icon">✅</span> System Requirements</h2>
+  <div class="section-desc">What you need on the workstation before installing.</div>
+  <table class="dtable">
+    <thead><tr><th>Component</th><th>Requirement</th><th>Status</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Python</strong></td>
+        <td>3.10 or later, 64-bit</td>
+        <td><span class="badge badge-req">Required</span></td>
+        <td>A Python 3.14.6 64-bit installer (<code>python-3.14.6-amd64.exe</code>) is included in the <code>hana_tool\</code> folder. During installation check <em>"Add Python to PATH"</em>.</td>
+      </tr>
+      <tr>
+        <td><strong>hdbcli</strong></td>
+        <td>Version 2.29.23, cp310-abi3-win_amd64</td>
+        <td><span class="badge badge-auto">Bundled</span></td>
+        <td>Already extracted into <code>lib\hdbcli\</code> and <code>lib\pyhdbcli.pyd</code>. No pip install needed.</td>
+      </tr>
+      <tr>
+        <td><strong>Chart.js</strong></td>
+        <td><code>chart.umd.min.js</code> (any v3/v4 UMD build)</td>
+        <td><span class="badge badge-opt">Optional</span></td>
+        <td>Required only for the Chart tab. Download from <code>cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.min.js</code> and place in <code>lib\</code>. The rest of the app works without it.</td>
+      </tr>
+      <tr>
+        <td><strong>Network</strong></td>
+        <td>TCP access to the HANA host on port 30241 (or custom)</td>
+        <td><span class="badge badge-req">Required</span></td>
+        <td>Typical ECS port for HANA tenant DBs. Confirm with your SID's instance number.</td>
+      </tr>
+      <tr>
+        <td><strong>Port 5000</strong></td>
+        <td>Free on localhost</td>
+        <td><span class="badge badge-req">Required</span></td>
+        <td>The built-in web server listens on <code>127.0.0.1:5000</code>. If another app uses port 5000, edit the last block of <code>minichecks_console_V2.0.py</code> and change it.</td>
+      </tr>
+      <tr>
+        <td><strong>Browser</strong></td>
+        <td>Any modern browser (Chrome, Edge, Firefox)</td>
+        <td><span class="badge badge-req">Required</span></td>
+        <td>The app opens your default browser automatically.</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ INSTALLATION -->
+<section id="installation">
+  <h2><span class="icon">📥</span> Installation</h2>
+  <div class="section-desc">How to install using the provided installer batch file.</div>
+
+  <h3>Option A — Automated installer (recommended)</h3>
+  <ol class="steps">
+    <li>
+      <div class="step-body">
+        <strong>Verify Python is installed</strong>
+        <span>Open a command prompt and run <code>python --version</code>. You need 64-bit Python 3.10+. If not installed, run <code>python-3.14.6-amd64.exe</code> from the <code>hana_tool\</code> folder and check <em>"Add Python to PATH"</em>.</span>
+      </div>
+    </li>
+    <li>
+      <div class="step-body">
+        <strong>Run the installer</strong>
+        <span>Double-click <code>install_minichecks_console.bat</code> in the <code>hana_tool\</code> folder. If you see a UAC prompt, click <em>Yes</em>.</span>
+      </div>
+    </li>
+    <li>
+      <div class="step-body">
+        <strong>Choose an installation directory</strong>
+        <span>The installer asks for a target path. Press Enter to accept the default (<code>C:\HANA_Tools\minichecks_console</code>), or type a custom path (e.g. <code>D:\Tools\minichecks</code>).</span>
+      </div>
+    </li>
+    <li>
+      <div class="step-body">
+        <strong>Wait for the copy and verification steps</strong>
+        <span>The installer copies all files, verifies the hdbcli import, checks port 5000 availability, creates <code>run_minichecks.bat</code>, and adds a desktop shortcut.</span>
+      </div>
+    </li>
+    <li>
+      <div class="step-body">
+        <strong>Launch the app</strong>
+        <span>Double-click the <em>"HANA Mini Checks v2"</em> shortcut on the Desktop, or navigate to the install folder and run <code>run_minichecks.bat</code>.</span>
+      </div>
+    </li>
+  </ol>
+
+  <h3>Option B — Manual run (no install)</h3>
+  <p>If you just want to run the app from the source folder without copying anything:</p>
+  <pre>cd "C:\...\hana_tool"
+python minichecks_console_V2.0.py</pre>
+  <p>The browser opens automatically at <code>http://127.0.0.1:5000</code>.</p>
+
+  <div class="callout callout-warn">
+    <span class="ico">⚠️</span>
+    <div><strong>Keep the console window open.</strong> The Python process is the web server. Closing it stops the app. Press <kbd>Ctrl</kbd>+<kbd>C</kbd> in the console window to stop it cleanly.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ DIRECTORY -->
+<section id="directory">
+  <h2><span class="icon">📂</span> Directory Structure</h2>
+  <div class="section-desc">Files and folders the app depends on.</div>
+  <div class="tree">
+<span class="folder">minichecks_console\</span>  (your install target)<br>
+│<br>
+├── <span class="req">minichecks_console_V2.0.py</span>   <span class="comment">← main application (required)</span><br>
+│<br>
+├── <span class="folder">lib\</span>                          <span class="comment">← local Python packages (required)</span><br>
+│   ├── <span class="req">pyhdbcli.pyd</span>                 <span class="comment">← SAP HANA client C extension (required)</span><br>
+│   ├── <span class="req">hdbcli\</span>                      <span class="comment">← hdbcli Python package directory (required)</span><br>
+│   └── <span class="opt">chart.umd.min.js</span>             <span class="comment">← Chart.js UMD build (optional — enables Chart tab)</span><br>
+│<br>
+├── <span class="folder">mini_checks\</span>                  <span class="comment">← SAP HANA SQL mini-check scripts (.txt / .sql)</span><br>
+│   ├── HANA_Backups_BackupRuns_2.00.070+.txt<br>
+│   ├── HANA_Configuration_Overview_2.00.040+.txt<br>
+│   └── <span class="comment">... (35+ scripts for Basic Bundle + any custom scripts)</span><br>
+│<br>
+├── <span class="folder">output\</span>                       <span class="comment">← auto-created; stores saved CSV and TXT files</span><br>
+│   └── <span class="comment">Consolidated_minichecks_basic_bundle_YYYYMMDD.txt</span><br>
+│<br>
+├── run_minichecks.bat              <span class="comment">← launcher (created by installer)</span><br>
+└── install_minichecks_console.bat  <span class="comment">← installer script</span>
+  </div>
+
+  <div class="callout callout-info">
+    <span class="ico">ℹ️</span>
+    <div>The <code>output\</code> directory is created automatically the first time a CSV or bundle output is saved. You do not need to create it manually.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ STARTUP -->
+<section id="startup">
+  <h2><span class="icon">▶️</span> Starting the App</h2>
+  <div class="section-desc">Ways to launch the console.</div>
+
+  <table class="dtable">
+    <thead><tr><th>Method</th><th>How</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Desktop shortcut</strong></td><td>Double-click <em>HANA Mini Checks v2</em> on the Desktop</td></tr>
+      <tr><td><strong>Batch launcher</strong></td><td>Run <code>run_minichecks.bat</code> in the install folder</td></tr>
+      <tr><td><strong>Command line</strong></td><td><code>python minichecks_console_V2.0.py</code> from the install folder</td></tr>
+    </tbody>
+  </table>
+
+  <p>After launch the console window prints:</p>
+  <pre>HANA SQL Console v6.0 running at http://127.0.0.1:5000  (Ctrl+C to stop)</pre>
+  <p>Your default browser opens <code>http://127.0.0.1:5000</code> automatically after ~0.8 s.
+     If it does not open, navigate there manually.</p>
+
+  <div class="callout callout-tip">
+    <span class="ico">💡</span>
+    <div>You can have multiple browser tabs open pointing to the same <code>http://127.0.0.1:5000</code>. All tabs share the same server-side HANA connection. Connecting or disconnecting in one tab affects all tabs.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ CONNECT -->
+<section id="connect">
+  <h2><span class="icon">🔌</span> Connecting to SAP HANA</h2>
+  <div class="section-desc">The login modal that appears when the app loads.</div>
+
+  <p>When the browser opens, a <strong>Connect to SAP HANA</strong> modal appears. Fill in the fields:</p>
+  <br/>
+  <table class="dtable">
+    <thead><tr><th>Field</th><th>Default</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Host</strong></td><td><em>empty</em></td><td>Hostname or IP of the HANA system (e.g. <code>hana-host.example.com</code>)</td></tr>
+      <tr><td><strong>Port</strong></td><td><code>30241</code></td><td>HANA SQL port. Formula: <code>3&lt;instance&gt;15</code> for SystemDB or <code>3&lt;instance&gt;41</code> for tenant. Adjust for your SID.</td></tr>
+      <tr><td><strong>Database</strong></td><td><em>empty</em></td><td>Tenant database name (e.g. <code>HP4</code>). Not used for the connection itself but shown in the status bar.</td></tr>
+      <tr><td><strong>User</strong></td><td><em>empty</em></td><td>HANA database user (e.g. <code>SYSTEM</code> or a monitoring user)</td></tr>
+      <tr><td><strong>Password</strong></td><td><em>empty</em></td><td>Password — never stored on disk; lives in Python process memory only for this session</td></tr>
+    </tbody>
+  </table>
+  <br/>
+  <p>Press <kbd>Enter</kbd> in the Password field or click <strong>Connect</strong>. On success:</p>
+  <ul style="padding-left:22px;margin-top:8px;font-size:14px;line-height:2">
+    <li>The modal closes.</li>
+    <li>The green dot (●) in the top-right corner lights up.</li>
+    <li>The status bar at the bottom shows host:port, database, and user.</li>
+    <li>The <strong>Run</strong> button, <strong>Mini Checks</strong> toggle, <strong>Basic Bundle</strong>, <strong>Consolidate</strong>, and <strong>Clear Outputs</strong> buttons all become active.</li>
+  </ul>
+  <br/>
+  <div class="callout callout-ok">
+    <span class="ico">✅</span>
+    <div>To <strong>disconnect</strong>, click the <strong>Disconnect</strong> button in the top-right corner. The connection is closed and the login modal reappears.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ EDITOR -->
+<section id="editor">
+  <h2><span class="icon">✏️</span> SQL Editor</h2>
+  <div class="section-desc">Writing and executing SQL statements.</div>
+
+  <p>
+    The left pane is the SQL editor. It opens pre-loaded with the
+    <code>HANA_Configuration_Overview_2.00.040+</code> mini-check as a starting reference.
+    Clear it or overwrite it at any time.
+  </p>
+  <br/>
+  <table class="dtable">
+    <thead><tr><th>Action</th><th>How</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Execute</strong></td><td>Click <strong>▶ Run</strong> or press <kbd>F5</kbd> or <kbd>Ctrl</kbd>+<kbd>Enter</kbd></td></tr>
+      <tr><td><strong>Tab indent</strong></td><td>Press <kbd>Tab</kbd> — inserts 2 spaces (browser default Tab behaviour is overridden)</td></tr>
+      <tr><td><strong>Clear editor</strong></td><td>Click <strong>Clear</strong></td></tr>
+      <tr><td><strong>Copy SQL</strong></td><td>Click the <strong>⊞</strong> (copy) button — copies the full editor content to clipboard</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Row limit</h3>
+  <p>Three radio buttons control how many rows are returned per query:</p>
+  <table class="dtable">
+    <thead><tr><th>Option</th><th>Behaviour</th></tr></thead>
+    <tbody>
+      <tr><td><code>500</code> (default)</td><td>Fetches up to 500 rows. Shows a ⚠ warning in the log if the result was capped.</td></tr>
+      <tr><td><code>1000</code></td><td>Fetches up to 1,000 rows.</td></tr>
+      <tr><td><code>All</code></td><td>Fetches all rows (<code>fetchall</code>). Use with caution on large result sets.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Comment handling</h3>
+  <p>Lines beginning with <code>--</code> are stripped before execution. This means SAP HANA mini-check scripts (which are heavily commented) can be pasted and run without modification.</p>
+
+  <h3>Trailing semicolon</h3>
+  <p>A trailing semicolon is removed automatically before sending the SQL to HANA. You do not need to add or remove it.</p>
+
+  <div class="callout callout-warn">
+    <span class="ico">⚠️</span>
+    <div>The editor supports only <strong>single statements</strong>. Do not paste a script with multiple <code>;</code>-separated statements — only the first will run (and stripping the trailing semicolon may cause a parse error with multi-statement input).</div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ RESULTS -->
+<section id="results">
+  <h2><span class="icon">📊</span> Results Table</h2>
+  <div class="section-desc">Viewing and sorting query output.</div>
+
+  <p>Results appear in the <strong>Table</strong> tab on the right pane. Each column header is clickable for client-side sorting.</p>
+  <br/>
+  <table class="dtable">
+    <thead><tr><th>Feature</th><th>Detail</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Sort</strong></td><td>Click any column header to sort ascending (↑), click again to sort descending (↓). Numeric columns sort numerically, text columns sort alphabetically.</td></tr>
+      <tr><td><strong>NULL display</strong></td><td>NULL values are shown as <em>NULL</em> in muted italic.</td></tr>
+      <tr><td><strong>Numeric alignment</strong></td><td>Values that look like numbers are right-aligned and coloured blue for quick scanning.</td></tr>
+      <tr><td><strong>Row cap warning</strong></td><td>If the result was capped by the row limit, the log shows ⚠ capped at N.</td></tr>
+      <tr><td><strong>DML statements</strong></td><td>Queries that return no rows (UPDATE, DELETE, DDL) show "Statement executed — N row(s) affected".</td></tr>
+      <tr><td><strong>CSV export</strong></td><td>Click <strong>⬇ CSV</strong> in the top-right of the results pane. The file is downloaded to your browser Downloads folder AND saved to the <code>output\</code> folder on the server.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>CSV file naming</h3>
+  <p>
+    Exported CSV files are named automatically:
+  </p>
+  <pre>ScriptName_OUTPUT_YYYYMMDD.csv          ← if a mini-check script was loaded
+hana_result_OUTPUT_YYYYMMDD.csv          ← for ad-hoc queries</pre>
+  <p>Where <code>YYYYMMDD</code> is today's date.</p>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ CHARTS -->
+<section id="charts">
+  <h2><span class="icon">📈</span> Chart Tab</h2>
+  <div class="section-desc">Visualising query results — requires chart.umd.min.js in lib\.</div>
+
+  <div class="callout callout-warn">
+    <span class="ico">⚠️</span>
+    <div>The Chart tab requires <code>lib\chart.umd.min.js</code>. If this file is missing the chart canvas will be blank. Download Chart.js from <code>cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.min.js</code> and place it in the <code>lib\</code> folder, then restart the app.</div>
+  </div>
+  <br/>
+  <p>After running any SELECT that returns rows, click the <strong>Chart</strong> tab:</p>
+  <br/>
+  <table class="dtable">
+    <thead><tr><th>Control</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Type</strong></td><td>Bar, Line, Pie, Doughnut, Polar Area, or Radar</td></tr>
+      <tr><td><strong>Label col</strong></td><td>Dropdown — which column to use as the X-axis / slice labels</td></tr>
+      <tr><td><strong>Value col</strong></td><td>Dropdown — which column to plot numerically (auto-defaults to the last numeric column)</td></tr>
+      <tr><td><strong>Color</strong></td><td>Base colour for bar/line charts. Pie/Doughnut/Polar use the built-in 10-colour palette automatically.</td></tr>
+      <tr><td><strong>Title</strong></td><td>Optional chart title shown above the chart</td></tr>
+      <tr><td><strong>💾 Save PNG</strong></td><td>Downloads the chart as a <code>.png</code> file with a white background (filename derived from the title)</td></tr>
+    </tbody>
+  </table>
+  <br/>
+  <div class="callout callout-tip">
+    <span class="ico">💡</span>
+    <div>Charts update live as you change the controls. You can run a new query and the chart will re-render automatically if you are on the Chart tab when the results arrive.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ MINI CHECKS -->
+<section id="minichecks">
+  <h2><span class="icon">📋</span> Mini Checks Sidebar</h2>
+  <div class="section-desc">Browsing and loading pre-written HANA diagnostic scripts.</div>
+
+  <p>
+    Click <strong>☰ Mini Checks</strong> in the header (visible after connecting) to toggle the scripts sidebar.
+    All <code>.sql</code> and <code>.txt</code> files in the <code>mini_checks\</code> folder are listed.
+  </p>
+  <br/>
+  <table class="dtable">
+    <thead><tr><th>Action</th><th>How</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Filter</strong></td><td>Type in the search box at the top of the sidebar — filters by filename substring, case-insensitive</td></tr>
+      <tr><td><strong>Select</strong></td><td>Click a script row (radio button selection)</td></tr>
+      <tr><td><strong>Load into editor</strong></td><td>Click <strong>⬇ Load into Editor</strong> at the bottom of the sidebar</td></tr>
+    </tbody>
+  </table>
+  <br/>
+  <p>
+    After loading, the SQL is placed in the editor. Press <kbd>F5</kbd> to run it immediately.
+    Script names are displayed with the version suffix (<code>_2.00.040+</code>) shown in a smaller muted line below the title.
+  </p>
+  <br/>
+  <div class="callout callout-ok">
+    <span class="ico">✅</span>
+    <div>You can add your own custom <code>.sql</code> or <code>.txt</code> scripts to the <code>mini_checks\</code> folder at any time. They appear in the sidebar immediately on the next page load (no restart needed).</div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ BUNDLE -->
+<section id="bundle">
+  <h2><span class="icon">▶▶</span> Basic Bundle</h2>
+  <div class="section-desc">Running all 35 standard diagnostic scripts in one click.</div>
+
+  <p>
+    Click <strong>▶▶ Basic Bundle</strong> in the header (visible after connecting).
+    A progress modal appears and the server runs all 35 bundled scripts sequentially in a background thread.
+  </p>
+  <br/>
+  <table class="dtable">
+    <thead><tr><th>Indicator</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Progress bar</strong></td><td>Fills from 0 to 100 % as each script completes</td></tr>
+      <tr><td><strong>Counter (N / 35)</strong></td><td>Shows how many scripts have been processed</td></tr>
+      <tr><td><strong>Current script name</strong></td><td>Shows which script is executing right now</td></tr>
+      <tr><td><strong>Skipped list</strong></td><td>Scripts that were skipped are listed with the reason (file not found, SQL error, etc.)</td></tr>
+      <tr><td><strong>Download link</strong></td><td>When complete, a link appears to download the consolidated output file</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Output file</h3>
+  <p>The bundle produces a single <code>.txt</code> file saved to the <code>output\</code> folder:</p>
+  <pre>Consolidated_minichecks_basic_bundle_YYYYMMDD.txt</pre>
+  <p>
+    The file contains a header section (scripts executed / skipped counts) followed by
+    each script's CSV output, separated by <code>════</code> dividers with the filename as a label.
+    Each script returns up to 500 rows.
+  </p>
+
+  <div class="callout callout-info">
+    <span class="ico">ℹ️</span>
+    <div>Only one Basic Bundle can run at a time. If a bundle is already running, clicking the button again returns an error. Wait for the progress bar to reach 100 % before starting another.</div>
+  </div>
+
+  <div class="callout callout-warn">
+    <span class="ico">⚠️</span>
+    <div>Scripts whose <code>.txt</code> file is not present in <code>mini_checks\</code> are skipped silently (counted as "skipped — file not found"). This is normal if you have a partial mini-checks library.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ CONSOLIDATE -->
+<section id="consolidate">
+  <h2><span class="icon">🗂️</span> Consolidate Output Files</h2>
+  <div class="section-desc">Merging individual output files into a single review document.</div>
+
+  <p>
+    Click <strong>📄 Consolidate</strong> in the header (visible after connecting) to open the Consolidate modal.
+  </p>
+  <br/>
+  <ol class="steps">
+    <li><div class="step-body"><strong>Select files</strong><span>All <code>.csv</code> and <code>.txt</code> files in the <code>output\</code> folder are listed with their sizes. Check the boxes for the files you want to merge. Use <strong>Select all</strong> to check everything.</span></div></li>
+    <li><div class="step-body"><strong>Click ▶ Consolidate</strong><span>The server reads each selected file and appends it to a new file with a <code>════</code> separator and filename label between each section.</span></div></li>
+    <li><div class="step-body"><strong>Download the result</strong><span>A download link appears immediately. The merged file is also saved in <code>output\</code> as <code>Consolidated_minichecks_review_YYYYMMDD.txt</code>.</span></div></li>
+  </ol>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ OUTPUTS -->
+<section id="outputs">
+  <h2><span class="icon">💾</span> Output Files</h2>
+  <div class="section-desc">How output files are named, saved, and managed.</div>
+
+  <table class="dtable">
+    <thead><tr><th>File pattern</th><th>Created by</th><th>Content</th></tr></thead>
+    <tbody>
+      <tr><td><code>ScriptName_OUTPUT_YYYYMMDD.csv</code></td><td>CSV export button</td><td>Single query result, comma-separated, quoted</td></tr>
+      <tr><td><code>hana_result_OUTPUT_YYYYMMDD.csv</code></td><td>CSV export (ad-hoc query)</td><td>Same as above, generic name</td></tr>
+      <tr><td><code>Consolidated_minichecks_basic_bundle_YYYYMMDD.txt</code></td><td>Basic Bundle</td><td>35 mini-check script results combined</td></tr>
+      <tr><td><code>Consolidated_minichecks_review_YYYYMMDD.txt</code></td><td>Consolidate modal</td><td>User-selected output files merged</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Clear Outputs</h3>
+  <p>
+    Click <strong>🗑 Clear Outputs</strong> in the header to delete all <code>.csv</code> and <code>.txt</code> files
+    from the <code>output\</code> folder. A confirmation dialog appears first. This action cannot be undone.
+  </p>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ SCRIPT REFERENCE -->
+<section id="scripts">
+  <h2><span class="icon">📜</span> Basic Bundle Script Reference</h2>
+  <div class="section-desc">The 35 scripts executed by the Basic Bundle, grouped by category.</div>
+
+  <div class="callout callout-info">
+    <span class="ico">ℹ️</span>
+    <div>All scripts are from the SAP HANA SQL and System Views Reference (SAP Note 1969700). They are read-only SELECT queries. The minimum HANA revision required is indicated by the filename suffix (e.g. <code>2.00.070+</code>).</div>
+  </div>
+  <br/>
+  <div class="script-grid">
+    <div class="script-tag"><span class="scat">Backups</span>HANA_Backups_BackupRuns_2.00.070+</div>
+    <div class="script-tag"><span class="scat">Backups</span>HANA_Backups_SizeEstimation_1.00.120+</div>
+    <div class="script-tag"><span class="scat">Configuration</span>HANA_Configuration_Overview_2.00.040+</div>
+    <div class="script-tag"><span class="scat">Configuration</span>HANA_Configuration_Overview_2.00.080+</div>
+    <div class="script-tag"><span class="scat">Configuration</span>HANA_Configuration_Parameters_2.00.040+</div>
+    <div class="script-tag"><span class="scat">Configuration</span>HANA_Configuration_PatchLevel</div>
+    <div class="script-tag"><span class="scat">Configuration</span>HANA_Configuration_Timezones_2.00.040+</div>
+    <div class="script-tag"><span class="scat">Connections</span>HANA_Connections_Statistics_2.00.060+</div>
+    <div class="script-tag"><span class="scat">Consistency</span>HANA_Consistency_CheckTableConsistency_Executions_2.00.040+</div>
+    <div class="script-tag"><span class="scat">Consistency</span>HANA_Consistency_CheckTableConsistency_Results_2.00.040+</div>
+    <div class="script-tag"><span class="scat">Consistency</span>HANA_Consistency_CheckTableConsistency_Tables_2.00.010+</div>
+    <div class="script-tag"><span class="scat">Disks</span>HANA_Disks_Data_Overview_2.00.030+</div>
+    <div class="script-tag"><span class="scat">Disks</span>HANA_Disks_Data_Partitions_2.00.040+</div>
+    <div class="script-tag"><span class="scat">Disks</span>HANA_Disks_DiskUsage_2.00.040+</div>
+    <div class="script-tag"><span class="scat">Disks</span>HANA_Disks_Overview</div>
+    <div class="script-tag"><span class="scat">Hosts</span>HANA_Hosts_FileSystems_2.00.020+</div>
+    <div class="script-tag"><span class="scat">Hosts</span>HANA_Hosts_Overview</div>
+    <div class="script-tag"><span class="scat">I/O</span>HANA_IO_DiskDetails_2.00.020+</div>
+    <div class="script-tag"><span class="scat">I/O</span>HANA_IO_KeyFigures_Details_2.00.060+</div>
+    <div class="script-tag"><span class="scat">I/O</span>HANA_IO_Savepoints_2.00.060+</div>
+    <div class="script-tag"><span class="scat">Locks</span>HANA_Locks_Transactional_LockWaits_2.00.060+</div>
+    <div class="script-tag"><span class="scat">Locks</span>HANA_Locks_Transactional_LockWaits_PerObject</div>
+    <div class="script-tag"><span class="scat">Memory</span>HANA_Memory_Components_2.00.060+</div>
+    <div class="script-tag"><span class="scat">Memory</span>HANA_Memory_Heap_Allocations_2.00.060+</div>
+    <div class="script-tag"><span class="scat">Memory</span>HANA_Memory_SQLCache_TopConsumers_2.00.053+</div>
+    <div class="script-tag"><span class="scat">Memory</span>HANA_Memory_TopConsumers_2.00.060+</div>
+    <div class="script-tag"><span class="scat">Replication</span>HANA_Replication_SystemReplication_Status</div>
+    <div class="script-tag"><span class="scat">Resources</span>HANA_Resources_CPUAndMemory_2.00.060+</div>
+    <div class="script-tag"><span class="scat">SQL</span>HANA_SQL_ExpensiveStatements_2.00.040+</div>
+    <div class="script-tag"><span class="scat">Statistics</span>HANA_StatisticsServer_Alerts_FrequentAlerts</div>
+    <div class="script-tag"><span class="scat">Statistics</span>HANA_StatisticsServer_Alerts_History</div>
+    <div class="script-tag"><span class="scat">Tables</span>HANA_Tables_ColumnStore_Columns_2.00.060+</div>
+    <div class="script-tag"><span class="scat">Tables</span>HANA_Tables_ColumnStore_Partitions_2.00.070+</div>
+    <div class="script-tag"><span class="scat">Tables</span>HANA_Tables_LargestTables_2.00.060+</div>
+    <div class="script-tag"><span class="scat">Tables</span>HANA_Tables_TopGrowingTables_Records_History_2.00.060+</div>
+    <div class="script-tag"><span class="scat">Tables</span>HANA_Tables_TopGrowingTables_Size_History_2.00.060+</div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ TROUBLESHOOT -->
+<section id="troubleshoot">
+  <h2><span class="icon">🔧</span> Troubleshooting</h2>
+  <div class="section-desc">Common problems and how to resolve them.</div>
+
+  <h3>The browser does not open automatically</h3>
+  <div class="callout callout-info">
+    <span class="ico">ℹ️</span>
+    <div>Navigate manually to <code>http://127.0.0.1:5000</code>. The server is running but Windows may have blocked the automatic browser launch. Check that <code>webbrowser</code> can find a default browser in the registry.</div>
+  </div>
+
+  <h3>Port 5000 is already in use</h3>
+  <div class="callout callout-warn">
+    <span class="ico">⚠️</span>
+    <div>
+      Find and stop the process using port 5000:
+      <pre>netstat -ano | findstr :5000</pre>
+      Or edit the last lines of <code>minichecks_console_V2.0.py</code> and change the port:
+      <pre>host, port = "127.0.0.1", 5001   # ← change to any free port</pre>
+      Then update <code>run_minichecks.bat</code> to reflect the new URL.
+    </div>
+  </div>
+
+  <h3>ImportError: No module named 'hdbcli'</h3>
+  <div class="callout callout-warn">
+    <span class="ico">⚠️</span>
+    <div>
+      The <code>lib\</code> folder is missing or not alongside the script. Verify:
+      <ul style="margin-top:6px;padding-left:20px;line-height:1.9">
+        <li><code>lib\pyhdbcli.pyd</code> exists</li>
+        <li><code>lib\hdbcli\</code> folder exists</li>
+        <li>Python is <strong>64-bit</strong> 3.10+ (run <code>python -c "import struct; print(struct.calcsize('P')*8)"</code> — must return <code>64</code>)</li>
+        <li>You are running the script from its own directory, not from a different folder</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Connection fails: "connection refused" or "timeout"</h3>
+  <div class="callout callout-warn">
+    <span class="ico">⚠️</span>
+    <div>
+      <ul style="padding-left:20px;line-height:1.9">
+        <li>Confirm the HANA host is reachable: <code>ping &lt;hostname&gt;</code></li>
+        <li>Confirm the port is open: <code>telnet &lt;hostname&gt; 30241</code> (or use Test-NetConnection in PowerShell)</li>
+        <li>Verify the port matches the tenant DB — formula: <code>3&lt;InstanceNumber&gt;41</code> for tenants, <code>3&lt;InstanceNumber&gt;13</code> for SystemDB</li>
+        <li>Check that your HANA user account is not locked in <code>SYS.USERS</code></li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Chart tab is blank / chart never renders</h3>
+  <div class="callout callout-warn">
+    <span class="ico">⚠️</span>
+    <div>
+      <code>lib\chart.umd.min.js</code> is missing. Download it:
+      <pre>https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.min.js</pre>
+      Save as <code>chart.umd.min.js</code> in the <code>lib\</code> folder, then restart the app. No browser cache refresh needed — the file is served locally.
+    </div>
+  </div>
+
+  <h3>Basic Bundle completes but many scripts are skipped</h3>
+  <div class="callout callout-info">
+    <span class="ico">ℹ️</span>
+    <div>
+      Each skipped script lists its reason in the modal (file not found, SQL error, etc.).
+      <ul style="margin-top:6px;padding-left:20px;line-height:1.9">
+        <li><strong>File not found</strong> — add the missing <code>.txt</code> scripts to <code>mini_checks\</code></li>
+        <li><strong>SQL error</strong> — the script may require a higher HANA revision than your system. Check the filename suffix (e.g. <code>2.00.070+</code>) against your HANA version in <code>M_SYSTEM_OVERVIEW</code>.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Slow execution / long-running queries</h3>
+  <div class="callout callout-tip">
+    <span class="ico">💡</span>
+    <div>There is no query timeout configured. If a query hangs, press <kbd>Ctrl</kbd>+<kbd>C</kbd> in the console window to stop the server (this also cancels the HANA connection) and restart. Long-running mini-check scripts on busy systems are normal — the statistics server aggregation tables can be large.</div>
+  </div>
+
+  <h3>How to change the HANA port formula by instance number</h3>
+  <table class="dtable">
+    <thead><tr><th>Instance #</th><th>Tenant port</th><th>SystemDB port</th></tr></thead>
+    <tbody>
+      <tr><td>00</td><td>30041</td><td>30013</td></tr>
+      <tr><td>01</td><td>30141</td><td>30113</td></tr>
+      <tr><td>02</td><td>30241</td><td>30213</td></tr>
+      <tr><td>03</td><td>30341</td><td>30313</td></tr>
+      <tr><td>NN</td><td>3NN41</td><td>3NN13</td></tr>
+    </tbody>
+  </table>
+</section>
+
+</div><!-- /.wrapper -->
+
+<footer>
+  SAP HANA Mini Checks Console v2.0 &nbsp;·&nbsp; Developer: Ernesto Espindola &nbsp;·&nbsp;
+  Team: RDE LAC &nbsp;·&nbsp;
+  <a href="mailto:ernesto.espindola@sap.com">ernesto.espindola@sap.com</a>
+  &nbsp;·&nbsp; Generated 2026-08-21
+</footer>
+
+</body>
+</html>
